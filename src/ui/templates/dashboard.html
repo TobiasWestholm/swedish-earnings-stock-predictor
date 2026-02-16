@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Svea Surveillance{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Dashboard - {{ stats.date }}</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Watchlist Today</h3>
+            <div class="stat-value">{{ stats.watchlist_count }}</div>
+            <p class="stat-label">Stocks Passed Filter</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Signals Today</h3>
+            <div class="stat-value">{{ stats.signals_today }}</div>
+            <p class="stat-label">Entry Opportunities</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Monitoring Status</h3>
+            <div class="stat-value status-{{ stats.monitoring_status|lower|replace(' ', '-') }}" id="monitoring-status">
+                {{ stats.monitoring_status }}
+            </div>
+            <p class="stat-label" id="monitoring-message">Live Tracking</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Recent Signals</h3>
+        {% if signals %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Ticker</th>
+                    <th>Entry Price</th>
+                    <th>VWAP</th>
+                    <th>Confidence</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for signal in signals %}
+                <tr>
+                    <td>{{ signal.signal_time }}</td>
+                    <td><strong>{{ signal.ticker }}</strong></td>
+                    <td>{{ "%.2f"|format(signal.entry_price) }} SEK</td>
+                    <td>{{ "%.2f"|format(signal.vwap) if signal.vwap else 'N/A' }} SEK</td>
+                    <td>{{ "%.0f"|format(signal.confidence_score * 100) if signal.confidence_score else 'N/A' }}%</td>
+                    <td>
+                        <button class="btn btn-small">View</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No signals yet today. Monitoring starts at 09:00 CET (Phase 3).</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="runScreener()">Run Screener Now</button>
+            <a href="/watchlist" class="btn">View Watchlist</a>
+            <a href="/signals" class="btn">View All Signals</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function runScreener() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+
+    fetch('/api/screener/run', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Screener complete! Found ${data.stocks_found} stocks.`);
+            location.reload();
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        alert(`Error: ${error}`);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Run Screener Now';
+    });
+}
+
+// Update monitoring status every 10 seconds
+function updateMonitoringStatus() {
+    fetch('/api/monitoring/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const statusEl = document.getElementById('monitoring-status');
+                const messageEl = document.getElementById('monitoring-message');
+
+                if (statusEl) {
+                    statusEl.textContent = data.status.replace('_', ' ');
+                    statusEl.className = 'stat-value status-' + data.status;
+                }
+
+                if (messageEl) {
+                    messageEl.textContent = data.message;
+                }
+            }
+        })
+        .catch(error => console.error('Error fetching monitoring status:', error));
+}
+
+// Update status on page load and every 10 seconds
+updateMonitoringStatus();
+setInterval(updateMonitoringStatus, 10000);
+</script>
+{% endblock %}

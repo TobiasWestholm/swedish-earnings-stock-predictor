@@ -1,0 +1,15 @@
+# Core dependencies
+yfinance>=0.2.48
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# Web UI
+flask>=3.0.0
+
+# Utilities
+pytz>=2024.1
+APScheduler>=3.10.0

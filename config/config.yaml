@@ -1,0 +1,43 @@
+market:
+  timezone: "Europe/Stockholm"
+  market_open: "09:00"
+  market_close: "17:30"
+
+screening:
+  momentum_lookback_3m: 63  # trading days (~3 months)
+  momentum_lookback_1y: 245  # trading days (~1 year, adjusted for yfinance data availability)
+  sma_period: 200
+  require_both_momentum: true  # Both 3M AND 1Y must be positive
+  min_trend_score: 60  # Minimum score to pass (after passing binary filters)
+
+monitoring:
+  poll_interval: 60  # seconds (limited by yfinance)
+  signal_window_start: "09:20"
+  signal_window_end: "10:00"
+  lookback_minutes_falling_knife: 5  # Check if price is above 5-min average (avoid falling knife)
+  max_price_extension: 0.05  # 5% above open (avoid extended entries)
+
+risk:
+  account_value: 100000  # SEK
+  risk_per_trade: 0.01  # 1% of portfolio
+  default_stop_loss_pct: 0.025  # 2.5% below entry
+  max_positions_per_day: 3
+  max_daily_loss: 0.03  # 3% of portfolio
+
+ui:
+  host: "127.0.0.1"  # localhost only
+  port: 5000
+  debug: true  # Development mode
+  auto_refresh_interval: 5  # seconds (JavaScript polling)
+
+data:
+  provider: "yfinance"
+  data_staleness_warning: 120  # seconds
+  earnings_calendar_path: "data/earnings_calendar.csv"
+
+database:
+  path: "data/trades.db"
+
+logging:
+  level: "INFO"
+  file: "logs/svea_surveillance.log"

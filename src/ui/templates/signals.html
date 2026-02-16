@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Signals - Svea Surveillance{% endblock %}
+
+{% block content %}
+<div class="signals">
+    <div class="page-header">
+        <h2>Entry Signals - {{ date }}</h2>
+        <span class="signal-count">{{ signals|length }} signal{{ 's' if signals|length != 1 else '' }} today</span>
+    </div>
+
+    <div class="info-box">
+        <p><strong>Signal Window:</strong> 09:20 - 10:00 CET</p>
+        <p><strong>Entry Conditions:</strong> Price above VWAP AND Price above Open AND Price >2% above yesterday's close AND Price above 5-min average</p>
+        <p><em>Auto-refreshes every 10 seconds during signal window. Data age updates live every second.</em></p>
+    </div>
+
+    {% if signals %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Signal Time</th>
+                <th>Ticker</th>
+                <th>Entry Price</th>
+                <th>Yesterday Close</th>
+                <th>% Since Yesterday</th>
+                <th>VWAP</th>
+                <th>% Above VWAP</th>
+                <th>Open</th>
+                <th>% Above Open</th>
+                <th>Confidence</th>
+                <th>Data Age</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for signal in signals %}
+            <tr class="signal-row">
+                <td>
+                    {% if signal.signal_time %}
+                        {{ signal.signal_time[11:19] if 'T' in signal.signal_time else signal.signal_time.split()[1] if ' ' in signal.signal_time else signal.signal_time }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="ticker"><strong>{{ signal.ticker }}</strong></td>
+                <td><strong>{{ "%.2f"|format(signal.entry_price) }} SEK</strong></td>
+                <td>{{ "%.2f"|format(signal.yesterday_close) if signal.yesterday_close else 'N/A' }} SEK</td>
+                <td class="positive">
+                    {% if signal.pct_from_yesterday %}
+                        <strong>+{{ "%.2f"|format(signal.pct_from_yesterday) }}%</strong>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(signal.vwap) if signal.vwap else 'N/A' }} SEK</td>
+                <td class="positive">
+                    {% if signal.conditions and signal.conditions.get('above_vwap') %}
+                        +{{ "%.2f"|format(((signal.entry_price - signal.vwap) / signal.vwap * 100)) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(signal.open_price) if signal.open_price else 'N/A' }} SEK</td>
+                <td class="positive">
+                    {% if signal.conditions and signal.conditions.get('above_open') %}
+                        +{{ "%.2f"|format(((signal.entry_price - signal.open_price) / signal.open_price * 100)) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="score score-{{ 'high' if signal.confidence_score >= 0.75 else 'medium' if signal.confidence_score >= 0.5 else 'low' }}"
+                          title="Confidence: {{ '%.0f'|format(signal.confidence_score * 100) }}% - Based on price position above VWAP/open and data freshness">
+                        {{ "%.0f"|format(signal.confidence_score * 100) if signal.confidence_score else 'N/A' }}%
+                    </span>
+                </td>
+                <td>
+                    <span class="data-age-display {{ 'positive' if signal.data_age_seconds < 120 else 'negative' }}"
+                          data-signal-time="{{ signal.signal_time }}"
+                          data-original-age="{{ signal.data_age_seconds }}">
+                        {{ signal.data_age_seconds }}s
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No signals detected yet</h3>
+        <p>Signals will appear here during signal window (09:20-14:00 CET) when entry conditions are met:</p>
+        <ul style="text-align: left; max-width: 400px; margin: 1rem auto;">
+            <li>Price above VWAP</li>
+            <li>Price above Opening Price</li>
+            <li>Price >2% above yesterday's close</li>
+        </ul>
+        <p style="margin-top: 1rem;"><em>This page auto-refreshes every 10 seconds</em></p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Update data age displays in real-time
+function updateDataAges() {
+    var ageElements = document.querySelectorAll('.data-age-display');
+    var now = new Date();
+
+    ageElements.forEach(function(element) {
+        var signalTimeStr = element.getAttribute('data-signal-time');
+        var originalAge = parseInt(element.getAttribute('data-original-age')) || 0;
+
+        if (!signalTimeStr) return;
+
+        // Parse signal time (ISO format: 2026-02-13T09:37:15+01:00)
+        var signalTime = new Date(signalTimeStr);
+
+        // Calculate elapsed time since signal was detected
+        var elapsedMs = now - signalTime;
+        var elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+        // Total age = original data age + elapsed time since signal
+        var totalAgeSeconds = originalAge + elapsedSeconds;
+
+        // Format the display
+        var displayText;
+        if (totalAgeSeconds < 60) {
+            displayText = totalAgeSeconds + 's';
+        } else if (totalAgeSeconds < 3600) {
+            var minutes = Math.floor(totalAgeSeconds / 60);
+            var seconds = totalAgeSeconds % 60;
+            displayText = minutes + 'm ' + seconds + 's';
+        } else {
+            var hours = Math.floor(totalAgeSeconds / 3600);
+            var remainingMinutes = Math.floor((totalAgeSeconds % 3600) / 60);
+            displayText = hours + 'h ' + remainingMinutes + 'm';
+        }
+
+        element.textContent = displayText;
+
+        // Update color based on current age
+        element.className = 'data-age-display ' + (totalAgeSeconds < 120 ? 'positive' : 'negative');
+    });
+}
+
+// Auto-refresh signals page every 10 seconds
+function autoRefreshSignals() {
+    // Check if we're in signal window (09:20-10:00 CET)
+    var now = new Date();
+    var hours = now.getHours();
+    var minutes = now.getMinutes();
+    var currentMinutes = hours * 60 + minutes;
+
+    var windowStart = 9 * 60 + 20;  // 09:20
+    var windowEnd = 10 * 60 + 0;    // 10:00
+
+    // Refresh more frequently during signal window
+    var refreshInterval = (currentMinutes >= windowStart && currentMinutes <= windowEnd) ? 10000 : 30000;
+
+    setTimeout(function() {
+        location.reload();
+    }, refreshInterval);
+}
+
+// Update ages immediately on page load
+updateDataAges();
+
+// Update ages every second
+setInterval(updateDataAges, 1000);
+
+// Start auto-refresh when page loads
+autoRefreshSignals();
+
+console.log('[Signals] Page will auto-refresh, data ages updating every second');
+</script>
+{% endblock %}

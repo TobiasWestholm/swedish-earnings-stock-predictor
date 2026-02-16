@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Watchlist - Svea Surveillance{% endblock %}
+
+{% block content %}
+<div class="watchlist">
+    <div class="page-header">
+        <h2>Watchlist - {{ date }}</h2>
+        <button class="btn btn-primary" onclick="runScreener()">Refresh Screener</button>
+    </div>
+
+    {% if watchlist %}
+    <div class="info-box">
+        <p><strong>{{ watchlist|length }} stocks</strong> passed momentum filter (3M + 1Y + SMA200 all positive)</p>
+        <p><em>Note: Stocks shown are from the most recent screener run. Click "Refresh Screener" to update.</em></p>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Ticker</th>
+                <th>Company</th>
+                <th>Score</th>
+                <th>Current Price</th>
+                <th>Yesterday Close</th>
+                <th>VWAP</th>
+                <th>SMA 200</th>
+                <th>3M Return</th>
+                <th>1Y Return</th>
+                <th>Status</th>
+                <th>Price Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in watchlist %}
+            <tr class="stock-row" data-ticker="{{ stock.ticker }}">
+                <td><strong>{{ loop.index }}</strong></td>
+                <td class="ticker"><strong>{{ stock.ticker }}</strong></td>
+                <td>{{ stock.name }}</td>
+                <td>
+                    <span class="score score-{{ 'high' if stock.trend_score >= 80 else 'medium' if stock.trend_score >= 70 else 'low' }}"
+                          title="Score Calculation: Base 30 (Price > SMA200) + up to 40 (3M return: {{ '+%.1f%%'|format(stock.return_3m * 100) if stock.return_3m else 'N/A' }}) + up to 30 (1Y return: {{ '+%.1f%%'|format(stock.return_1y * 100) if stock.return_1y else 'N/A' }}). Higher score = stronger momentum.">
+                        {{ "%.0f"|format(stock.trend_score) }}
+                    </span>
+                </td>
+                <td class="live-price" data-ticker="{{ stock.ticker }}">
+                    {{ "%.2f"|format(stock.current_price) if stock.current_price else 'N/A' }} SEK
+                </td>
+                <td>
+                    {{ "%.2f"|format(stock.yesterday_close) if stock.yesterday_close else 'N/A' }} SEK
+                </td>
+                <td class="live-vwap" data-ticker="{{ stock.ticker }}">
+                    <span class="loading">-</span>
+                </td>
+                <td>{{ "%.2f"|format(stock.sma_200) if stock.sma_200 else 'N/A' }} SEK</td>
+                <td class="return-cell {{ 'positive' if stock.return_3m and stock.return_3m > 0 else 'negative' }}">
+                    {{ "+%.1f%%"|format(stock.return_3m * 100) if stock.return_3m else 'N/A' }}
+                </td>
+                <td class="return-cell {{ 'positive' if stock.return_1y and stock.return_1y > 0 else 'negative' }}">
+                    {{ "+%.1f%%"|format(stock.return_1y * 100) if stock.return_1y else 'N/A' }}
+                </td>
+                <td>
+                    <span class="status-badge status-monitoring live-status"
+                          data-ticker="{{ stock.ticker }}"
+                          title="Monitoring: Waiting for live data">Monitoring</span>
+                </td>
+                <td class="live-time" data-ticker="{{ stock.ticker }}">
+                    <span class="loading">-</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="info-box">
+        <h4>Legend:</h4>
+        <ul>
+            <li><strong>Score:</strong> Quality score (60-100). Higher = stronger momentum.</li>
+            <li><strong>3M/1Y Return:</strong> Both must be positive to pass filter.</li>
+            <li><strong>SMA 200:</strong> Price must be above 200-day moving average.</li>
+        </ul>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <h3>No stocks passed the momentum filter for {{ date }}</h3>
+
+        {% if calendar_count %}
+        <div style="text-align: left; max-width: 600px; margin: 2rem auto;">
+            <p><strong>✓ Found {{ calendar_count }} companies reporting today</strong></p>
+
+            {% if calendar_entries %}
+            <p style="margin-top: 1rem;">Sample companies from calendar:</p>
+            <ul style="list-style: none; padding-left: 0;">
+                {% for entry in calendar_entries %}
+                <li style="margin: 0.5rem 0;">{{ entry.ticker }} - {{ entry.company_name }}</li>
+                {% endfor %}
+                {% if calendar_count > 10 %}
+                <li style="margin: 0.5rem 0; font-style: italic;">... and {{ calendar_count - 10 }} more</li>
+                {% endif %}
+            </ul>
+            {% endif %}
+
+            <p style="margin-top: 1.5rem;"><strong>Why no stocks passed:</strong></p>
+            <ul style="text-align: left;">
+                <li>Many tickers lack data on yfinance (delisted, not available)</li>
+                <li>Strict filter requires ALL of:
+                    <ul>
+                        <li>Price above 200-day SMA</li>
+                        <li>3-month return positive</li>
+                        <li>1-year return positive</li>
+                    </ul>
+                </li>
+                <li>Date timing: yfinance data may be limited for 2026 dates</li>
+            </ul>
+
+            <p style="margin-top: 1rem;"><em>In production with real-time dates, typically 10-20% of companies pass the filter.</em></p>
+        </div>
+        {% else %}
+        <p>No earnings reports found in <code>data/earnings_calendar.csv</code> for {{ date }}.</p>
+        {% endif %}
+
+        <button class="btn btn-primary" onclick="runScreener()" style="margin-top: 1.5rem;">Run Screener</button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function runScreener() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+
+    fetch('/api/screener/run', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Screener complete! Found ${data.stocks_found} stocks.`);
+            location.reload();
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        alert(`Error: ${error}`);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Refresh Screener';
+    });
+}
+
+// Update live prices and VWAP every 10 seconds
+function updateLivePrices() {
+    console.log('[Watchlist] Fetching live prices...');
+    fetch('/api/monitoring/live')
+        .then(response => response.json())
+        .then(data => {
+            console.log('[Watchlist] Received data:', data);
+            if (data.success && data.data) {
+                console.log('[Watchlist] Processing', data.data.length, 'stocks');
+                data.data.forEach(function(stock) {
+                    // Update current price
+                    var priceSelector = '.live-price[data-ticker="' + stock.ticker + '"]';
+                    var priceEl = document.querySelector(priceSelector);
+                    console.log('[Watchlist]', stock.ticker, '- Price element:', priceEl, 'Price:', stock.current_price);
+                    if (priceEl && stock.current_price) {
+                        priceEl.textContent = stock.current_price.toFixed(2) + ' SEK';
+                        console.log('[Watchlist]', stock.ticker, '- Updated price to', stock.current_price.toFixed(2));
+                    }
+
+                    // Update VWAP
+                    var vwapSelector = '.live-vwap[data-ticker="' + stock.ticker + '"]';
+                    var vwapEl = document.querySelector(vwapSelector);
+                    if (vwapEl && stock.vwap) {
+                        var vwapSpan = vwapEl.querySelector('span') || vwapEl;
+                        vwapSpan.textContent = stock.vwap.toFixed(2) + ' SEK';
+                        vwapSpan.className = '';
+
+                        // Color code if price is above/below VWAP
+                        if (stock.current_price && stock.vwap) {
+                            if (stock.current_price > stock.vwap) {
+                                vwapSpan.className = 'positive';
+                            } else if (stock.current_price < stock.vwap) {
+                                vwapSpan.className = 'negative';
+                            }
+                        }
+                    }
+
+                    // Update status with tooltip
+                    var statusSelector = '.live-status[data-ticker="' + stock.ticker + '"]';
+                    var statusEl = document.querySelector(statusSelector);
+                    if (statusEl) {
+                        var ageSeconds = stock.data_age_seconds || 0;
+                        if (ageSeconds < 120) {
+                            statusEl.textContent = 'Live';
+                            statusEl.className = 'status-badge status-live';
+                            statusEl.title = 'Live: Price data is fresh (less than 2 minutes old)';
+                        } else {
+                            statusEl.textContent = 'Stale';
+                            statusEl.className = 'status-badge status-stale';
+                            statusEl.title = 'Stale: Price data is ' + Math.floor(ageSeconds / 60) + ' minutes old (yfinance has 15+ min delays)';
+                        }
+                    }
+
+                    // Update price timestamp (adjust for data age to show actual market data time)
+                    var timeSelector = '.live-time[data-ticker="' + stock.ticker + '"]';
+                    var timeEl = document.querySelector(timeSelector);
+                    if (timeEl && stock.timestamp) {
+                        var timestamp = new Date(stock.timestamp);
+                        // Subtract data age to get actual market data time
+                        var dataAgeMs = (stock.data_age_seconds || 0) * 1000;
+                        var actualDataTime = new Date(timestamp.getTime() - dataAgeMs);
+
+                        var hours = actualDataTime.getHours().toString().padStart(2, '0');
+                        var minutes = actualDataTime.getMinutes().toString().padStart(2, '0');
+                        var seconds = actualDataTime.getSeconds().toString().padStart(2, '0');
+                        timeEl.textContent = hours + ':' + minutes + ':' + seconds;
+                    }
+                });
+            }
+        })
+        .catch(function(error) {
+            console.error('Error fetching live prices:', error);
+        });
+}
+
+// Update prices on page load and every 10 seconds
+if (document.querySelector('.stock-row')) {
+    updateLivePrices();
+    setInterval(updateLivePrices, 10000);
+}
+</script>
+{% endblock %}

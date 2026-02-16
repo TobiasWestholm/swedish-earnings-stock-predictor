@@ -1,0 +1,77 @@
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+
+# Logs
+logs/*.log
+*.log
+
+# Database
+data/trades.db
+data/*.db
+data/*.sqlite
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Application specific
+data/*.csv.bak
+data/*.csv
+!data/all_tickers.txt
+data/backup/
+data/paper_trades.db
+
+# Exported data
+*.csv
+!data/all_tickers.txt
+
+# Claude Code
+.claude/

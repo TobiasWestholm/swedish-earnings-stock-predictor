@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}History - Svea Surveillance{% endblock %}
+
+{% block content %}
+<div class="history">
+    <div class="page-header">
+        <h2>Hypothetical Trade History - {{ date }}</h2>
+        <span class="signal-count">{{ trades|length }} trade{{ 's' if trades|length != 1 else '' }} on {{ date }}</span>
+    </div>
+
+    <div class="info-box">
+        <p><strong>Hypothetical Trading:</strong> Paper trades automatically created when first signal detected for each ticker during morning session (9:20-10:00).</p>
+        <p><strong>Exit Time:</strong> All positions automatically closed at 17:00 CET (end of trading day).</p>
+        <p><em>These are simulated trades for performance tracking purposes only.</em></p>
+    </div>
+
+    <!-- Daily Statistics -->
+    <div class="stats-container">
+        <h3>Daily Statistics ({{ date }})</h3>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value">{{ stats.total_trades }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Closed Trades</div>
+                <div class="stat-value">{{ stats.closed_trades }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Open Trades</div>
+                <div class="stat-value">{{ stats.open_trades }}</div>
+            </div>
+            <div class="stat-box {{ 'positive' if stats.profitable_trades > 0 else '' }}">
+                <div class="stat-label">Profitable</div>
+                <div class="stat-value">{{ stats.profitable_trades }}</div>
+            </div>
+            <div class="stat-box {{ 'negative' if stats.losing_trades > 0 else '' }}">
+                <div class="stat-label">At Loss</div>
+                <div class="stat-value">{{ stats.losing_trades }}</div>
+            </div>
+            <div class="stat-box {{ 'positive' if stats.avg_return > 0 else 'negative' if stats.avg_return < 0 else '' }}">
+                <div class="stat-label">Avg Return</div>
+                <div class="stat-value">
+                    {% if stats.avg_return %}
+                        {{ "{:+.2f}".format(stats.avg_return) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-box {{ 'positive' if stats.win_rate >= 50 else 'negative' if stats.win_rate > 0 else '' }}">
+                <div class="stat-label">Win Rate</div>
+                <div class="stat-value">
+                    {% if stats.win_rate %}
+                        {{ "%.1f"|format(stats.win_rate) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Statistics -->
+    <div class="stats-container">
+        <h3>Overall Statistics (All Time)</h3>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value">{{ overall_stats.total_trades }}</div>
+            </div>
+            <div class="stat-box {{ 'positive' if overall_stats.profitable_trades > 0 else '' }}">
+                <div class="stat-label">Profitable</div>
+                <div class="stat-value">{{ overall_stats.profitable_trades }}</div>
+            </div>
+            <div class="stat-box {{ 'negative' if overall_stats.losing_trades > 0 else '' }}">
+                <div class="stat-label">At Loss</div>
+                <div class="stat-value">{{ overall_stats.losing_trades }}</div>
+            </div>
+            <div class="stat-box {{ 'positive' if overall_stats.avg_return > 0 else 'negative' if overall_stats.avg_return < 0 else '' }}">
+                <div class="stat-label">Avg Return</div>
+                <div class="stat-value">
+                    {% if overall_stats.avg_return %}
+                        {{ "{:+.2f}".format(overall_stats.avg_return) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-box {{ 'positive' if overall_stats.win_rate >= 50 else 'negative' if overall_stats.win_rate > 0 else '' }}">
+                <div class="stat-label">Win Rate</div>
+                <div class="stat-value">
+                    {% if overall_stats.win_rate %}
+                        {{ "%.1f"|format(overall_stats.win_rate) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-box {{ 'positive' if overall_stats.max_return > 0 else '' }}">
+                <div class="stat-label">Best Trade</div>
+                <div class="stat-value">
+                    {% if overall_stats.max_return %}
+                        {{ "{:+.2f}".format(overall_stats.max_return) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-box {{ 'negative' if overall_stats.min_return < 0 else '' }}">
+                <div class="stat-label">Worst Trade</div>
+                <div class="stat-value">
+                    {% if overall_stats.min_return %}
+                        {{ "{:+.2f}".format(overall_stats.min_return) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trade History Table -->
+    {% if trades %}
+    <h3>Trade History</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Ticker</th>
+                <th>Entry Time</th>
+                <th>Entry Price</th>
+                <th>Exit Time</th>
+                <th>Exit Price</th>
+                <th>P&L %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trade in trades %}
+            <tr class="trade-row {{ 'open' if trade.status == 'open' else 'closed' }}">
+                <td>
+                    <span class="status-badge status-{{ trade.status }}">
+                        {{ trade.status|upper }}
+                    </span>
+                </td>
+                <td class="ticker"><strong>{{ trade.ticker }}</strong></td>
+                <td>
+                    {% if trade.entry_time %}
+                        {{ trade.entry_time[11:19] if 'T' in trade.entry_time else trade.entry_time.split()[1] if ' ' in trade.entry_time else trade.entry_time }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(trade.entry_price) }} SEK</td>
+                <td>
+                    {% if trade.exit_time %}
+                        {{ trade.exit_time[11:19] if 'T' in trade.exit_time else trade.exit_time.split()[1] if ' ' in trade.exit_time else trade.exit_time }}
+                    {% else %}
+                        <span class="pending">Pending</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if trade.exit_price %}
+                        {{ "%.2f"|format(trade.exit_price) }} SEK
+                    {% else %}
+                        <span class="pending">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if trade.pnl_percent is not none %}
+                        <span class="pnl {{ 'positive' if trade.pnl_percent > 0 else 'negative' if trade.pnl_percent < 0 else 'neutral' }}">
+                            <strong>{{ "{:+.2f}".format(trade.pnl_percent) }}%</strong>
+                        </span>
+                    {% else %}
+                        <span class="pending">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No hypothetical trades found for {{ date }}.</p>
+        <p>Trades are automatically created when entry signals are detected during the morning session (9:20-10:00 CET).</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .stats-container {
+        margin: 20px 0;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .stats-container h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #2c3e50;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .stat-box {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+        border: 1px solid #dee2e6;
+    }
+
+    .stat-box.positive {
+        background: #d4edda;
+        border-color: #c3e6cb;
+    }
+
+    .stat-box.negative {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+    }
+
+    .stat-label {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-box.positive .stat-value {
+        color: #155724;
+    }
+
+    .stat-box.negative .stat-value {
+        color: #721c24;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+
+    .status-open {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+
+    .status-closed {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .pnl {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    .pnl.positive {
+        color: #155724;
+        background: #d4edda;
+    }
+
+    .pnl.negative {
+        color: #721c24;
+        background: #f8d7da;
+    }
+
+    .pnl.neutral {
+        color: #6c757d;
+        background: #e9ecef;
+    }
+
+    .pending {
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+
+    .empty-state p {
+        margin: 10px 0;
+    }
+
+    .trade-row.open {
+        background-color: #fffef0;
+    }
+
+    .trade-row.closed {
+        opacity: 0.95;
+    }
+</style>
+{% endblock %}
