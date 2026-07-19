@@ -1,0 +1,998 @@
+date,ticker,company_name
+2/12/26,TIETOS.ST,Tieto Evry
+2/12/26,ACTI.ST,Active Biotech
+2/12/26,ADDV-A.ST,ADDvise Group
+2/12/26,AQS-B.ST,AQ Group
+2/12/26,BIOG-B.ST,BioGaia
+2/12/26,CRAD-B.ST,C-Rad
+2/12/26,FPAR-A.ST,Fastpartner
+2/12/26,GENI.ST,Generic Sweden
+2/12/26,GENO.ST,Genovis
+2/12/26,HUFV-A.ST,Hufvudstaden
+2/12/26,IVSO.ST,INVISIO
+2/12/26,JLT.ST,JLT Mobile Computers
+2/12/26,LIAB.ST,Lindab International
+2/12/26,MEKO.ST,MEKO
+2/12/26,NIBE-B.ST,Nibe Industrier
+2/12/26,NMAN.ST,Nederman Holding
+2/12/26,PREC.ST,Precise Biometrics
+2/12/26,PROF-B.ST,ProfilGruppen
+2/12/26,RAILG.ST,Railcare Group
+2/12/26,RAY-B.ST,Raysearch Laboratories
+2/12/26,STIL.ST,Stille
+2/12/26,TRAD.ST,TradeDoubler
+2/12/26,VESTUM.ST,Vestum
+2/12/26,AIK-B.ST,AIK Fotboll
+2/12/26,CARA.ST,Carasent
+2/12/26,STEF-B.ST,Stendörren Fastigheter
+2/12/26,BRIX.ST,Briox
+2/12/26,FRWA-B.ST,Frontwalker
+2/12/26,LEA.ST,Lea Bank
+2/12/26,TOURN.ST,Tourn International
+2/12/26,BIM.ST,BIMobject
+2/12/26,CLAV.ST,Clavister
+2/12/26,ARCOMA.ST,Arcoma
+2/12/26,ORGC.ST,OrganoClick
+2/12/26,MORROW.ST,Morrow Bank
+2/12/26,VOLO.ST,Volati
+2/12/26,STUDBO.ST,Studentbostäder i Norden
+2/12/26,NIL-B.ST,Nilörngruppen
+2/12/26,HYCO.ST,Hybricon
+2/12/26,CAMX.ST,Camurus
+2/12/26,WPTG-B.ST,White Pearl Technology Group
+2/12/26,POLYG.ST,Polygiene Group
+2/12/26,LITI.ST,Litium
+2/12/26,SECARE.ST,Swedencare
+2/12/26,NYAB.ST,NYAB
+2/12/26,CFISH.ST,Crunchfish
+2/12/26,EMBRAC-B.ST,Embracer Group
+2/12/26,ATORX.ST,Alligator Bioscience
+2/12/26,AINO.ST,Aino Health
+2/12/26,BLUE.ST,Bluelake Mineral
+2/12/26,ACARIX.ST,Acarix
+2/12/26,AERO.ST,Svenska Aerogel Holding
+2/12/26,AMBEA.ST,Ambea
+2/12/26,XMR.ST,XMReality
+2/12/26,INSTAL.ST,Instalco
+2/12/26,SEDANA.ST,Sedana Medical
+2/12/26,RLVNC.ST,Relevance Communication Nordic
+2/12/26,XSPRAY.ST,Xspray Pharma
+2/12/26,FNM.ST,Ferronordic
+2/12/26,ICO.ST,Iconovo
+2/12/26,KEBNI-B.ST,KebNi
+2/12/26,LIMET.ST,Lime Technologies
+2/12/26,LARK.ST,Lärkberget
+2/12/26,FERRO.ST,Ferroamp
+2/12/26,VERT-B.ST,Vertiseit
+2/12/26,JOMA.ST,John Mattson
+2/12/26,NEOLA.ST,Neola Medical
+2/12/26,BOMILL.ST,BoMill
+2/12/26,ANNE-B.ST,Annehem Fastigheter
+2/12/26,YUBICO.ST,Yubico
+2/12/26,NOWO.ST,Nowonomics
+2/12/26,CHECK.ST,Checkin.com Group
+2/12/26,VIMIAN.ST,Vimian Group
+2/12/26,NORB-B.ST,Nordisk Bergteknik
+2/12/26,GIGA.ST,Gigasun
+2/12/26,NIVI-B.ST,Nivika Fastigheter
+2/12/26,DVYSR.ST,Devyser Diagnostics
+2/12/26,W5.ST,W5 Solutions
+2/12/26,NEOBO.ST,Neobo Fastigheter
+2/12/26,NANECH.ST,NanoEcho
+2/12/26,VSURE.ST,Verisure
+2/13/26,BORG.ST,Björn Borg
+2/13/26,DIOS.ST,Diös
+2/13/26,FING-B.ST,Fingerprint Cards
+2/13/26,IMPC.ST,Impact Coatings
+2/13/26,LAMM-B.ST,Lammhults Design Group
+2/13/26,STWK.ST,Stockwik Förvaltning
+2/13/26,NTEK-B.ST,Novotek
+2/13/26,LOGI-B.ST,Logistea
+2/13/26,VSSAB-B.ST,Viking Supply Ships
+2/13/26,UTG1.ST,Unlimited Travel Group UTG
+2/13/26,GGEO.ST,Guideline Geo
+2/13/26,SILEON.ST,Sileon
+2/13/26,CORE-A.ST,Corem Property Group
+2/13/26,KDV.ST,KDventures
+2/13/26,ADVE.ST,Advenica
+2/13/26,SFTR.ST,Safeture
+2/13/26,HUMBLE.ST,Humble Group
+2/13/26,SNX.ST,Premium Snacks Nordic
+2/13/26,ELTEL.ST,Eltel
+2/13/26,SBFBO-A.ST,SBF Bostad
+2/13/26,NOSA.ST,Nosa Plugs
+2/13/26,ALLIGO-B.ST,Alligo
+2/13/26,TRIAN-B.ST,Trianon
+2/13/26,AGTIRA-B.ST,Agtira
+2/13/26,SENZA.ST,SenzaGen
+2/13/26,ACCON.ST,Acconeer
+2/13/26,LYKO-A.ST,Lyko Group
+2/13/26,NCAB.ST,NCAB Group
+2/13/26,TRIBO-B.ST,Tribox Group
+2/13/26,CDON.ST,CDON
+2/13/26,REFINE.ST,Refine Group
+2/13/26,SFL.ST,Safello Group
+2/13/26,EFFH.ST,Effnetplattformen Holding
+2/13/26,ELIC.ST,Elicera Therapeutics
+2/13/26,CDMIL.ST,CodeMill
+2/13/26,WTW-A.ST,Wall To Wall Group
+2/13/26,SODER.ST,Söder Sportfiske
+2/13/26,HAYPP.ST,Haypp Group
+2/13/26,KLARA-B.ST,KlaraBo
+2/13/26,BEAMMW-B.ST,BeammWave
+2/13/26,ONEF.ST,Oneflow
+2/13/26,4C.ST,4C Group
+2/13/26,KARNEL-B.ST,Karnell
+2/13/26,SEHED-B.ST,SEHED Byggmästargruppen
+2/14/26,TEQ.ST,Teqnion
+2/16/26,RATO-B.ST,Ratos
+2/16/26,STVA-B.ST,Star Vault
+2/16/26,IZAFE-B.ST,Izafe Group
+2/16/26,EYEW.ST,Eye World
+2/16/26,BRIN-B.ST,Brinova Fastigheter
+2/16/26,NITRO.ST,Nitro Games
+2/16/26,ENVAR.ST,Envar
+2/17/26,BAHN-B.ST,Bahnhof
+2/17/26,BRE2.ST,Bredband2
+2/17/26,DRIL.ST,Drillcon
+2/17/26,FAG.ST,Fagerhult Group
+2/17/26,G5EN.ST,G5 Entertainment
+2/17/26,HULT-B.ST,Hultström Group
+2/17/26,CAT-B.ST,Catella
+2/17/26,SINT.ST,SinterCast
+2/17/26,TRAX-B.ST,Traction
+2/17/26,MOB.ST,Moberg Pharma
+2/17/26,ECC-B.ST,Ecoclime Group
+2/17/26,CLBIO.ST,Corline Biomedical
+2/17/26,SINCH.ST,Sinch
+2/17/26,FLOWS.ST,Flowscape Technology
+2/17/26,CMOTEC-B.ST,Scandinavian ChemoTech
+2/17/26,SEYE.ST,Smart Eye
+2/17/26,IVACC.ST,Intervacc
+2/17/26,MANTEX.ST,Mantex
+2/17/26,EG7.ST,Enad Global 7
+2/17/26,INFREA.ST,Infrea
+2/17/26,CS.ST,CoinShares International
+2/17/26,EMBELL.ST,Embellence Group
+2/17/26,POLYMER.ST,Polymer Factory Sweden
+2/17/26,MODEL.ST,Modelon
+2/17/26,BOKUS.ST,Bokusgruppen
+2/17/26,TRUE-B.ST,Truecaller
+2/17/26,ENGCON-B.ST,engcon
+2/17/26,MAHVIE.ST,Mahvie Minerals
+2/17/26,OBSE.ST,Observit
+2/17/26,PRISMA.ST,Prisma Properties
+2/17/26,SVEAF.ST,Sveafastigheter
+2/17/26,HACK.ST,Hacksaw
+2/17/26,TERNOR.ST,Terranor Group
+2/18/26,ORRON.ST,Orrön Energy
+2/18/26,AVEN.ST,Avensia
+2/18/26,CAST.ST,Castellum
+2/18/26,CNCJO-B.ST,Concejo
+2/18/26,HAV-B.ST,Havsfrun Investment
+2/18/26,LUND-B.ST,Lundbergföretagen
+2/18/26,SAFETY-B.ST,Mysafety Group
+2/18/26,MVIR.ST,Medivir
+2/18/26,OEM-B.ST,OEM International
+2/18/26,SEZI.ST,Senzime
+2/18/26,VBG-B.ST,VBG Group
+2/18/26,KOBR-B.ST,Kopparbergs Bryggeri
+2/18/26,SLG.ST,Safe Lane Gaming
+2/18/26,ENZY.ST,Enzymatica
+2/18/26,LATF-B.ST,Latvian Forest Company
+2/18/26,COOL-B.ST,BrainCool
+2/18/26,KAMBI.ST,Kambi Group
+2/18/26,SALT-B.ST,SaltX Technology Holding
+2/18/26,INSPL.ST,Insplorion
+2/18/26,BRAV.ST,Bravida Holding
+2/18/26,SHOT.ST,Scandic Hotels Group
+2/18/26,ERMA.ST,Enorama Pharma
+2/18/26,SYNACT.ST,SynAct Pharma
+2/18/26,BICO.ST,BICO Group
+2/18/26,ISOFOL.ST,Isofol Medical
+2/18/26,ATIC.ST,Actic Group
+2/18/26,BIOA-B.ST,BioArctic
+2/18/26,CIBUS.ST,Cibus Nordic Real Estate
+2/18/26,DICOT.ST,Dicot Pharma
+2/18/26,UPSALE.ST,Upsales Technology
+2/18/26,KFAST-B.ST,K-Fast Holding
+2/18/26,LCLEAN.ST,LifeClean International
+2/18/26,THUNDR.ST,Thunderful Group
+2/18/26,CIRCHE.ST,CirChem
+2/18/26,CRUST-B.ST,Crustal Resources
+2/18/26,BRILL.ST,Brilliant Future
+2/18/26,AGROUP.ST,Arlandastad
+2/18/26,MMGR-B.ST,Momentum Group
+2/18/26,ARCTIC.ST,Arctic Blue Beverages
+2/18/26,DIVE.ST,Dividend Sweden
+2/18/26,ASTOR.ST,Scandinavian Astor Group
+2/18/26,NREST.ST,Nordrest
+2/18/26,CINPHA.ST,Cinclus Pharma
+2/19/26,LEVBIO.ST,Level Bio
+2/19/26,BURE.ST,Bure Equity
+2/19/26,ENRO.ST,Eniro Group
+2/19/26,EWRK.ST,Ework Group
+2/19/26,FIRE.ST,Firefly
+2/19/26,LUN.ST,Lundin Mining
+2/19/26,MEAB-B.ST,Malmbergs
+2/19/26,PCOM-B.ST,Precomp Solutions
+2/19/26,SAXG.ST,Saxlund Group
+2/19/26,RROS.ST,Rottneros
+2/19/26,OGUN-B.ST,Ogunsen
+2/19/26,STAR-B.ST,Starbreeze
+2/19/26,WISE.ST,Wise Group
+2/19/26,F2M.ST,Free2Move Holding
+2/19/26,LEVEL.ST,Nordic LEVEL Group
+2/19/26,ARCT.ST,Arctic Minerals
+2/19/26,NANOC-B.ST,NanoCap Group
+2/19/26,ABSO.ST,Absolent Air Care Group
+2/19/26,HEART.ST,Scandinavian Real Heart
+2/19/26,LUG.ST,Lundin Gold
+2/19/26,K2A-B.ST,K2A Knaust & Andersson Fastigheter
+2/19/26,INISS-B.ST,Inission
+2/19/26,NANEXA.ST,Nanexa
+2/19/26,NAVIGO.ST,Navigo Invest
+2/19/26,WAYS.ST,Waystream Group
+2/19/26,GARO.ST,GARO
+2/19/26,B3.ST,B3 Consulting Group
+2/19/26,GOMX.ST,GomSpace Group
+2/19/26,BOHO.ST,Boho Group
+2/19/26,GTGS.ST,Gold Town Games
+2/19/26,EXPRS2.ST,ExpreS2ion Biotech Holding
+2/19/26,ALCA.ST,Alcadon Group
+2/19/26,AAC.ST,AAC Clyde Space
+2/19/26,ONCO.ST,Oncopeptides
+2/19/26,MCLR.ST,Medclair
+2/19/26,SUS.ST,Surgical Science Sweden
+2/19/26,QIIWI.ST,Qiiwi Games
+2/19/26,TENEO.ST,Teneo.ai
+2/19/26,TSEC.ST,Tempest Security
+2/19/26,OVZON.ST,Ovzon
+2/19/26,RPLAN.ST,Ranplan Group
+2/19/26,RAKE.ST,Raketech
+2/19/26,CAG.ST,CAG Group
+2/19/26,VPLAY-B.ST,Viaplay Group
+2/19/26,VALUNO.ST,Valuno Group
+2/19/26,BIOEX.ST,Bioextrax
+2/19/26,GPG.ST,Genova Property Group
+2/19/26,CAPS.ST,Northern CapSek Ventures
+2/19/26,VER.ST,Verve Group
+2/19/26,FNOVA-B.ST,Fortinova Fastigheter
+2/19/26,SFAST.ST,Stenhus Fastigheter i Norden
+2/19/26,CINT.ST,Cint Group
+2/19/26,DSNO.ST,Desenio Group
+2/19/26,CHEF.ST,Cheffelo
+2/19/26,SBG.ST,StoneBeach Group
+2/19/26,ARPL.ST,Arla Plast
+2/19/26,YIELD.ST,SaveLend Group
+2/19/26,FIRST-B.ST,First Venture Sweden
+2/19/26,FREEM.ST,Freemelt Holding
+2/19/26,FRAG.ST,Fragbite Group
+2/19/26,FSPORT.ST,FSport
+2/19/26,XPC.ST,XP Chemistries
+2/19/26,ADTR.ST,Adtraction Group
+2/19/26,TITA-B.ST,Titania Holding
+2/19/26,VIVA.ST,Viva Wine
+2/19/26,CASEG.ST,Case Group
+2/19/26,SKOLON.ST,Skolon
+2/19/26,ASMDEE-B.ST,Asmodee
+2/19/26,QBIM.ST,Qbim
+2/19/26,GULD.ST,Guldbrev
+2/20/26,MAV.ST,Mavshack
+2/20/26,BTS-B.ST,BTS Group
+2/20/26,CATE.ST,Catena
+2/20/26,ELON.ST,Elon
+2/20/26,FPIP.ST,Formpipe Software
+2/20/26,BINERO.ST,Binero Group
+2/20/26,OBAB.ST,Online Brands Nordic
+2/20/26,ORTI-B.ST,Ortivus
+2/20/26,SOF-B.ST,Softronic
+2/20/26,WPAY.ST,Westpay
+2/20/26,CLS-B.ST,Clinical Laserthermia Systems
+2/20/26,SYNEXO.ST,Synexo Group
+2/20/26,SOSI.ST,Sotkamo Silver
+2/20/26,OBDU-B.ST,Obducat
+2/20/26,SIVI.ST,Siljansvik
+2/20/26,SBOK.ST,ScandBook Holding
+2/20/26,NOVKAN.ST,Novakand Pharma
+2/20/26,DIST.ST,DistIT
+2/20/26,GUARD.ST,Guard Therapeutics
+2/20/26,KAPIAB.ST,Kallebäck Property Invest
+2/20/26,NICO.ST,Nicoccino Holding
+2/20/26,CANTA.ST,Cantargia
+2/20/26,GCOR.ST,Gaming Corps
+2/20/26,PERP-B.ST,Perpetua Medical
+2/20/26,SPEONE.ST,SpectrumOne
+2/20/26,BAT.ST,Eurobattery Minerals
+2/20/26,SOLT.ST,Soltech Energy Sweden
+2/20/26,KLAR.ST,Klaria Pharma Holding
+2/20/26,XBRANE.ST,Xbrane Biopharma
+2/20/26,NEPA.ST,Nepa
+2/20/26,TIRO.ST,Transiro Holding
+2/20/26,INIT.ST,Initiator Pharma
+2/20/26,FMM-B.ST,FM Mattsson Mora Group
+2/20/26,BUSER.ST,Bambuser
+2/20/26,ATIN.ST,Athanase Innovation
+2/20/26,NXAR.ST,Nexar Group
+2/20/26,SEAF.ST,Seafire
+2/20/26,INFRAC.ST,Infracom Group
+2/20/26,NOSIUMB.ST,NOSIUM
+2/20/26,FLUIC.ST,Fluicell
+2/20/26,JDT.ST,JonDeTech Sensors
+2/20/26,LUMITO.ST,Lumito
+2/20/26,S2M.ST,S2Medical
+2/20/26,TRAIN-B.ST,Train Alliance
+2/20/26,ESGR-B.ST,ES Energy Save Holding
+2/20/26,PIERCE.ST,Pierce Group
+2/20/26,HMPLY.ST,Hemply Balance Holding
+2/20/26,CEDER.ST,Cedergrenska
+2/20/26,AVSALT.ST,Avsalt Group
+2/20/26,QBRICK.ST,Qbrick
+2/20/26,INTE.ST,Intellego Technologies
+2/20/26,SYNSAM.ST,Synsam
+2/20/26,ALPCOT-B.ST,Alpcot Holding
+2/20/26,COLLAX.ST,Collaxio
+2/20/26,BUDDY-B.ST,BuddyPro Group
+2/20/26,RLOS-B.ST,RanLOS
+2/20/26,WRV.ST,Webrock Ventures
+2/20/26,CCC.ST,Cavotec Group
+2/22/26,IMHO-B.ST,IMHO Intermedia House
+2/23/26,GARP.ST,Garpco
+2/23/26,TCCa.ST,TCECUR Sweden
+2/23/26,AFRI.ST,Africa Resources
+2/23/26,THRILL.ST,Gamethrill
+2/23/26,ALBERT.ST,eEducation Albert
+2/24/26,MER.ST,Meren Energy
+2/24/26,HANZA.ST,HANZA
+2/24/26,IMMNOV.ST,Immunovia
+2/24/26,SARSYS.ST,SARSYS
+2/24/26,SONE.ST,Sonetel
+2/24/26,BONEX.ST,Bonesupport
+2/24/26,G2M.ST,Gentoo Media
+2/24/26,H100.ST,H100 Group
+2/24/26,PRO.ST,Promimic
+2/25/26,KAKEL.ST,Kakel Max
+2/25/26,ACROUD.ST,Acroud
+2/25/26,GTAB-B.ST,Glycorex Transplantation
+2/25/26,ARBO-A.ST,Arbona
+2/25/26,ZZ-B.ST,Zinzino
+2/25/26,CRWEN.ST,Crown Energy
+2/25/26,HEGR.ST,Hedera Group
+2/25/26,GREAT-BTA.ST,Greater Than
+2/25/26,PADEL.ST,Acenta Group
+2/25/26,SBB-B.ST,Samhällsbyggnadsbolaget i Norden
+2/25/26,BONAS.ST,Bonäsudden Holding
+2/25/26,REAL.ST,Real Fastigheter
+2/25/26,SIMRIS-B.ST,Simris Group
+2/25/26,ACUVI.ST,Acuvi
+2/25/26,SENSW.ST,Sustainable Energy Solutions Sweden Holding
+2/25/26,ACOU.ST,AcouSort
+2/25/26,IRLAB-A.ST,IRLAB Therapeutics
+2/25/26,RENT.ST,Rentunder Holding
+2/25/26,CARDEO.ST,Cardeon
+2/25/26,BETCO.ST,Better Collective
+2/25/26,FLUO.ST,FluoGuide
+2/25/26,STABL.ST,Stayble Therapeutics
+2/25/26,IMPsdba.ST,Implantica
+2/25/26,LIPUM.ST,Lipum
+2/25/26,MODTX.ST,Modus Therapeutics Holding
+2/25/26,HIGHCO-B.ST,High Coast Distillery
+2/25/26,GIG-SDB.ST,GiG Software
+2/25/26,QSYS.ST,Qualisys
+2/26/26,BINV.ST,BioInvent International
+2/26/26,DIAH.ST,Diadrom Holding
+2/26/26,KABE-B.ST,KABE Group
+2/26/26,PION-B.ST,PION Group
+2/26/26,SGGS.ST,Sensys Gatso Group
+2/26/26,K33.ST,K33
+2/26/26,AXIC-A.ST,aXichem
+2/26/26,GRANGX.ST,Grangex
+2/26/26,NGS.ST,NGS Group
+2/26/26,TRIONA.ST,Triona
+2/26/26,EGTX.ST,Egetis Therapeutics
+2/26/26,IDLDX.ST,IDL Diagnostics
+2/26/26,SIVE.ST,Sivers Semiconductors
+2/26/26,ALMT.ST,ALM Equity
+2/26/26,CLEM.ST,Clemondo Group
+2/26/26,ORTb.ST,Ortoma
+2/26/26,SANION.ST,Saniona
+2/26/26,BESS.ST,Byhmgard
+2/26/26,NICA.ST,Nanologica
+2/26/26,MINEST.ST,Minesto
+2/26/26,FRONT.ST,Front Ventures
+2/26/26,MAHA-A.ST,Maha Capital
+2/26/26,GATE.ST,Jumpgate
+2/26/26,SPOTR.ST,Spotr Group
+2/26/26,PRLD.ST,Prolight Diagnostics
+2/26/26,36GRP.ST,36 Group
+2/26/26,SDS.ST,Seamless Distribution Systems
+2/26/26,2CUREX.ST,2cureX
+2/26/26,DONE.ST,Done.ai
+2/26/26,COEGIN.ST,Coegin Pharma
+2/26/26,NIO.ST,Nordic Iron Ore
+2/26/26,THINC.ST,Thinc Collective
+2/26/26,ALZCUR.ST,AlzeCure Pharma
+2/26/26,MNTC.ST,Mentice
+2/26/26,MOBA.ST,M.O.B.A. Network
+2/26/26,NANOFH.HE,Nanoform Finland
+2/26/26,PROGEN.ST,Prostatype Genomics
+2/26/26,ONCOZ.ST,OncoZenge
+2/26/26,DLAB.ST,Dlaboratory Sweden
+2/26/26,HEXI.ST,Hexicon
+2/26/26,PILA.ST,PILA PHARMA
+2/26/26,PIXFAM.ST,Pixfam
+2/26/26,5QO.F,Qlucore
+2/26/26,PIXEL.ST,PixelFox
+2/26/26,KVIX.ST,Kvix
+2/26/26,BAWAT.ST,Bawat Water Technologies
+2/26/26,BUY.ST,Sweden Buyersclub
+2/26/26,RMDX.ST,Railway Metrics and Dynamics
+2/26/26,LUMEN.ST,LumenRadio
+2/26/26,HERNO-B.ST,Hernö Gin
+2/26/26,WONDR.ST,Wonderboo
+2/26/26,SHIP.ST,BlueYield
+2/26/26,WSGR.ST,WS WeSports Group
+2/26/26,ARGO.ST,Argo Defence Group
+2/27/26,ANOT.ST,Anoto Group
+2/27/26,LNFI.ST,LN Future Invest
+2/27/26,NNH.ST,New Nordic Healthbrands
+2/27/26,PRCO-B.ST,Precio Fishbone
+2/27/26,FASTAT.ST,Fastator
+2/27/26,LAIR.ST,LightAir
+2/27/26,VIVE.ST,Vivesto
+2/27/26,DOXA.ST,Doxa
+2/27/26,ECOMB.ST,ECOMB
+2/27/26,ABIG.ST,Abelco Investment Group
+2/27/26,LUC.ST,Lucara Diamond
+2/27/26,SERT.ST,Serstech
+2/27/26,SES.ST,Scandinavian Enviro Systems
+2/27/26,HELIO.ST,Heliospectra
+2/27/26,OPTI.ST,OptiCept Technologies
+2/27/26,EMART.ST,EmbeddedArt Group
+2/27/26,GABA.ST,Gabather
+2/27/26,ACRI-B.ST,Acrinova
+2/27/26,HEIM-PREF.ST,Heimstaden
+2/27/26,SPEC.ST,SpectraCure
+2/27/26,VICO.ST,Vicore Pharma Holding
+2/27/26,FOUT.ST,Holdflight
+2/27/26,XINT.ST,Xintela
+2/27/26,MEGR.ST,Mediacle Group
+2/27/26,CRNO-B.ST,Cereno Scientific
+2/27/26,PHYR-B.ST,Preservia Hyresfastigheter
+2/27/26,PAX.ST,Paxman
+2/27/26,OXE.ST,OXE Marine
+2/27/26,ENRAD.ST,Enrad
+2/27/26,CF1prefp2.ST,Coeli Fastighet I
+2/27/26,SCOUT.ST,Scout Gaming Group
+2/27/26,ATANA.ST,Attana
+2/27/26,CNI5prefP2.ST,CNI Nordic 5
+2/27/26,CF2PREFP2.ST,Coeli Fastighet II
+2/27/26,TINGS-B.ST,Tingsvalvet Fastighets
+2/27/26,CPEI.ST,Coeli Private Equity
+2/27/26,NORDIG.ST,Nord Insuretech Group
+2/27/26,PHOLpref.ST,Preservia Holding
+2/27/26,KLIMAT.ST,Klimator
+2/27/26,LOHILO.ST,Lohilo Foods
+2/27/26,PTRK.ST,Physitrack
+2/27/26,CRET.ST,Creturner Group
+2/27/26,TRNSF.ST,Transfer Group
+2/27/26,HILB-B.ST,Hilbert Group
+2/27/26,COMPDM.ST,Compodium International
+2/27/26,OPTER.ST,Opter
+2/27/26,NIUTEC.ST,Niutech Group
+2/27/26,CHARGE.ST,ChargePanel
+2/27/26,BRAVE.ST,Kinda Brave
+2/27/26,NEO-B.ST,Neovici
+2/27/26,QBEN.ST,Qben Infra
+2/27/26,KBC.ST,KB Components
+2/27/26,DMXSE-SDB.ST,District Metals
+3/2/26,MIDSU.ST,Midsummer
+3/4/26,SNM.ST,ShaMaran Petroleum
+3/4/26,8TRA.ST,Traton
+3/4/26,IDUN-B.ST,Idun Industrier
+3/5/26,EKTA-B.ST,Elekta
+3/5/26,SYSR.ST,Systemair
+3/5/26,KENH.ST,Kentima Holding
+3/5/26,LINKAB.ST,Link Prop Investment
+3/5/26,INTEG-B.ST,Integrum
+3/6/26,SECTB.ST,Sectra
+3/6/26,INCOAX.ST,InCoax Networks
+3/10/26,SOLNA.ST,Solnaberg Property
+3/11/26,CLAS-B.ST,Clas Ohlson
+3/11/26,GOTL-B.ST,Gotlandsbolaget
+3/11/26,DIVIO-B.ST,Divio Technologies
+3/12/26,VIMAB.ST,Vimab Group
+3/12/26,TPGR.ST,Time People Group
+3/12/26,RUSTA.ST,Rusta
+3/12/26,SIBEK.ST,Sibek
+3/13/26,SVOL-B.ST,Svolder
+3/13/26,SCIB.ST,Scibase Holding
+3/13/26,CLEAN.ST,Clean Motion
+3/16/26,BTCX.ST,Goobit Group
+3/17/26,BRIGHT.ST,BrightBid
+3/18/26,SKIS-B.ST,SkiStar
+3/18/26,SDOS.ST,Scandidos
+3/18/26,BIOVIC-B.ST,Biovica International
+3/19/26,IRIS.ST,Irisity
+3/19/26,ALVO_SDB.ST,Alvotech
+3/20/26,TALK.ST,TalkPool
+3/20/26,LEMSE.ST,Leading Edge Materials
+3/20/26,TRML.ST,Trainimal
+3/20/26,EMB.ST,EMB Mission Bound
+3/25/26,DMYDB.ST,Diamyd Medical
+3/25/26,ALZ.ST,Alzinova
+3/25/26,AEC.ST,Africa Energy
+3/25/26,LYGRD.ST,Lyckegård
+3/26/26,HM-B.ST,H&M
+3/26/26,LIDDS.ST,LIDDS
+3/26/26,SUMMA.ST,Summa Defence
+3/26/26,REALFI.ST,Realfiction
+3/26/26,LPGO.ST,Lipigon Pharmaceuticals
+3/26/26,MTI.ST,MTI Investment
+3/26/26,VUXEN.ST,Vuxen Group
+3/27/26,NFGAB.ST,Nordic Flanges Group
+3/27/26,HOTEL.ST,Hotel Fast SSE
+3/27/26,CMH.ST,Chordate Medical Holding
+3/27/26,MAGLE.ST,Magle Chemoswed Holding
+3/27/26,ORTIN.ST,Ortelius International
+3/27/26,WYLD.ST,Wyld Networks
+3/30/26,SAXG.ST,Saxlund Group
+3/31/26,ENERS.ST,Enersize
+3/31/26,FLEXM.ST,Flexion Mobile
+3/31/26,MAXENT-B.ST,Maximum Entertainment
+3/31/26,MASHUP.ST,Mashup Ireland
+3/31/26,OODA.ST,OODA AI
+3/31/26,SUBGEN.ST,Subgen AI
+3/31/26,GSKR-SDB.ST,Goldsky Resources
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,,

@@ -1,0 +1,1305 @@
+{% extends "base.html" %}
+
+{% block title %}Earnings Analysis - Earnings Predictor{% endblock %}
+
+{% block content %}
+<div class="earnings-analysis">
+    <div class="page-header">
+        <h2>Earnings Day Intraday Analysis</h2>
+        <p class="subtitle">Average price movement on earnings days that pass momentum screening</p>
+    </div>
+
+    {% if not has_data %}
+    <div class="empty-state">
+        <h3>No Data Available</h3>
+        <p>{{ message }}</p>
+        <p><strong>To generate data:</strong></p>
+        <pre style="background: #f4f4f4; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+./venv/bin/python scripts/extract_earnings_intraday_data.py \
+  --start 2023-01-01 \
+  --end 2024-12-31
+        </pre>
+        <p>This will scan all tickers for earnings days and extract intraday price data.</p>
+    </div>
+    {% else %}
+
+    <!-- Data Summary -->
+    <div class="info-box">
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-label">Total Earnings Days:</span>
+                <span class="stat-value" style="color: #ffc107;">{{ stats.total_days }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Passed Filter:</span>
+                <span class="stat-value" style="color: #007bff;">{{ filter_passed_count }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Created Signals:</span>
+                <span class="stat-value" style="color: #28a745;">{{ signal_days_count }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Unique Tickers:</span>
+                <span class="stat-value">{{ stats.total_tickers }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Date Range:</span>
+                <span class="stat-value">{{ stats.first_date }} to {{ stats.last_date }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Controls -->
+    <div class="chart-controls">
+        <div class="control-group">
+            <span class="group-title" style="color: #ffc107;">● All Earnings (Yellow)</span>
+            <label class="compact-label">
+                <input type="checkbox" id="showAllEarningsRaw" checked>
+                Raw
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showAllEarningsSmoothed" checked>
+                Smoothed
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showAllEarningsStdDev">
+                Std Dev
+            </label>
+        </div>
+
+        <div class="control-group">
+            <span class="group-title" style="color: #007bff;">● Filter-Passed (Blue)</span>
+            <label class="compact-label">
+                <input type="checkbox" id="showFilterPassedRaw" checked>
+                Raw
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showFilterPassedSmoothed" checked>
+                Smoothed
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showFilterPassedStdDev">
+                Std Dev
+            </label>
+        </div>
+
+        <div class="control-group">
+            <span class="group-title" style="color: #28a745;">● Signal-Created (Green)</span>
+            <label class="compact-label">
+                <input type="checkbox" id="showSignalsRaw" checked>
+                Raw
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showSignalsSmoothed" checked>
+                Smoothed
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showSignalsStdDev">
+                Std Dev
+            </label>
+        </div>
+
+        <div class="control-group">
+            <span class="group-title" style="color: #9b59b6;">● Top 30% Performers (Purple)</span>
+            <label class="compact-label">
+                <input type="checkbox" id="showTop30Raw" checked>
+                Raw
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showTop30Smoothed" checked>
+                Smoothed
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showTop30StdDev">
+                Std Dev
+            </label>
+        </div>
+
+        <div class="control-group">
+            <span class="group-title" style="color: #e74c3c;">● Bottom 30% Performers (Red)</span>
+            <label class="compact-label">
+                <input type="checkbox" id="showBottom30Raw" checked>
+                Raw
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showBottom30Smoothed" checked>
+                Smoothed
+            </label>
+            <label class="compact-label">
+                <input type="checkbox" id="showBottom30StdDev">
+                Std Dev
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label class="compact-label">
+                <input type="checkbox" id="showGrid" checked>
+                Show Grid
+            </label>
+        </div>
+    </div>
+
+    <!-- Main Chart -->
+    <div class="chart-container">
+        <canvas id="earningsChart"></canvas>
+    </div>
+
+    <!-- ROI Calculator -->
+    <div class="roi-calculator">
+        <h3>ROI Calculator</h3>
+        <p class="roi-instructions">Click on the chart to set purchase and sell times. ROI will be calculated across all visible lines.</p>
+        <div class="roi-markers">
+            <div class="roi-marker" id="purchaseMarker">
+                <span class="marker-label">Purchase:</span>
+                <span class="marker-value" id="purchaseTime">Not set</span>
+                <span class="marker-price" id="purchasePrice"></span>
+            </div>
+            <div class="roi-marker" id="sellMarker">
+                <span class="marker-label">Sell:</span>
+                <span class="marker-value" id="sellTime">Not set</span>
+                <span class="marker-price" id="sellPrice"></span>
+            </div>
+        </div>
+        <div class="roi-results" id="roiResults" style="display: none;">
+            <h4>Expected ROI:</h4>
+            <div id="roiBreakdown"></div>
+        </div>
+        <button id="clearROI" style="display: none;">Clear Selection</button>
+    </div>
+
+    <!-- Interpretation Guide -->
+    <div class="interpretation-guide">
+        <h3>How to Read This Chart</h3>
+        <ul>
+            <li><strong>Yellow Line:</strong> Average price movement across <em>ALL earnings days</em> (no filter)</li>
+            <li><strong>Blue Line:</strong> Average price movement for earnings days that <em>passed the momentum filter</em></li>
+            <li><strong>Green Line:</strong> Average price movement for earnings days that <em>actually created entry signals</em> (strictest criteria)</li>
+            <li><strong>Shaded Area (±1 Std Dev):</strong> Typical range of price movement for filter-passed days (68% of cases fall within this range)</li>
+            <li><strong>100% = 9:00 Price:</strong> All prices normalized to 9:00 opening price as baseline</li>
+            <li><strong>Above 100%:</strong> Stock gained value since 9:00</li>
+            <li><strong>Below 100%:</strong> Stock lost value since 9:00</li>
+        </ul>
+
+        <h3>What's the Difference?</h3>
+        <ul>
+            <li><strong>All Earnings (Yellow):</strong> Every single earnings day, regardless of quality - the baseline average</li>
+            <li><strong>Passed Filter (Blue):</strong> Earnings days where the stock met momentum screening criteria (volume, price movement, etc.)</li>
+            <li><strong>Created Signal (Green):</strong> Subset of filter-passed days where an actual entry signal was triggered (watchlist inclusion, timing, etc.)</li>
+            <li><strong>Why compare all three?</strong>
+                <ul>
+                    <li>If blue > yellow: Your momentum filter selects better-performing earnings days</li>
+                    <li>If green > blue: Your signal creation logic adds value beyond just the filter</li>
+                    <li>If green ≤ yellow: Your filtering/signaling may need improvement</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>Strategy Insights</h3>
+        <p>Use this visualization to:</p>
+        <ul>
+            <li>Identify typical intraday patterns on earnings days</li>
+            <li>Determine optimal entry and exit times</li>
+            <li>Validate that your momentum filter selects better-performing stocks (blue vs yellow)</li>
+            <li>Validate that your signal creation logic adds value (green vs blue)</li>
+            <li>Understand volatility (wider bands = more unpredictable)</li>
+        </ul>
+    </div>
+
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% if has_data %}
+<script>
+    // Chart data from backend
+    const allEarningsRaw = {{ all_earnings_chart_data | safe }};
+    const filterPassedRaw = {{ filter_passed_chart_data | safe }};
+    const signalRaw = {{ signal_chart_data | safe }};
+    const top30Raw = {{ top_20pct_chart_data | safe }};
+    const bottom30Raw = {{ bottom_30pct_chart_data | safe }};
+    const allEarningsSmoothed = {{ all_earnings_smoothed | default('[]') | safe }};
+    const filterPassedSmoothed = {{ filter_passed_smoothed | default('[]') | safe }};
+    const signalSmoothed = {{ signal_smoothed_chart_data | default('[]') | safe }};
+    const top30Smoothed = {{ top_20pct_smoothed | default('[]') | safe }};
+    const bottom30Smoothed = {{ bottom_30pct_smoothed | default('[]') | safe }};
+
+    // Extract labels from all earnings (most complete dataset)
+    const allLabels = allEarningsRaw.map(d => d.time);
+
+    // Helper function to create data maps
+    function createDataMap(data) {
+        const map = {};
+        data.forEach(d => {
+            map[d.time] = {
+                mean: d.mean,
+                upper: d.upper_band || d.mean,
+                lower: d.lower_band || d.mean
+            };
+        });
+        return map;
+    }
+
+    // Create maps for all datasets
+    const allEarningsRawMap = createDataMap(allEarningsRaw);
+    const allEarningsSmoothedMap = createDataMap(allEarningsSmoothed);
+    const filterPassedRawMap = createDataMap(filterPassedRaw);
+    const filterPassedSmoothedMap = createDataMap(filterPassedSmoothed);
+    const signalRawMap = createDataMap(signalRaw);
+    const signalSmoothedMap = createDataMap(signalSmoothed);
+    const top30RawMap = createDataMap(top30Raw);
+    const top30SmoothedMap = createDataMap(top30Smoothed);
+    const bottom30RawMap = createDataMap(bottom30Raw);
+    const bottom30SmoothedMap = createDataMap(bottom30Smoothed);
+
+    // Helper function to align data with labels
+    function alignData(map, labels, field = 'mean') {
+        return labels.map(time =>
+            map[time] !== undefined ? map[time][field] : null
+        );
+    }
+
+    // Align all datasets with labels
+    const allEarningsRawData = alignData(allEarningsRawMap, allLabels);
+    const allEarningsRawUpper = alignData(allEarningsRawMap, allLabels, 'upper');
+    const allEarningsRawLower = alignData(allEarningsRawMap, allLabels, 'lower');
+    const allEarningsSmoothedData = alignData(allEarningsSmoothedMap, allLabels);
+
+    const filterPassedRawData = alignData(filterPassedRawMap, allLabels);
+    const filterPassedRawUpper = alignData(filterPassedRawMap, allLabels, 'upper');
+    const filterPassedRawLower = alignData(filterPassedRawMap, allLabels, 'lower');
+    const filterPassedSmoothedData = alignData(filterPassedSmoothedMap, allLabels);
+
+    const signalRawData = alignData(signalRawMap, allLabels);
+    const signalRawUpper = alignData(signalRawMap, allLabels, 'upper');
+    const signalRawLower = alignData(signalRawMap, allLabels, 'lower');
+    const signalSmoothedData = alignData(signalSmoothedMap, allLabels);
+
+    const top30RawData = alignData(top30RawMap, allLabels);
+    const top30RawUpper = alignData(top30RawMap, allLabels, 'upper');
+    const top30RawLower = alignData(top30RawMap, allLabels, 'lower');
+    const top30SmoothedData = alignData(top30SmoothedMap, allLabels);
+
+    const bottom30RawData = alignData(bottom30RawMap, allLabels);
+    const bottom30RawUpper = alignData(bottom30RawMap, allLabels, 'upper');
+    const bottom30RawLower = alignData(bottom30RawMap, allLabels, 'lower');
+    const bottom30SmoothedData = alignData(bottom30SmoothedMap, allLabels);
+
+    // Chart configuration
+    const ctx = document.getElementById('earningsChart').getContext('2d');
+
+    const config = {
+        type: 'line',
+        data: {
+            labels: allLabels,
+            datasets: [
+                // All Earnings (Yellow) - Raw
+                {
+                    label: 'All Earnings (Raw)',
+                    data: allEarningsRawData,
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: false,
+                    order: 3
+                },
+                // All Earnings (Yellow) - Smoothed
+                {
+                    label: 'All Earnings (Smoothed)',
+                    data: allEarningsSmoothedData,
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    borderWidth: 3.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4,
+                    fill: false,
+                    spanGaps: false,
+                    order: 2
+                },
+                // Filter-Passed (Blue) - Raw
+                {
+                    label: 'Filter-Passed (Raw)',
+                    data: filterPassedRawData,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 3
+                },
+                // Filter-Passed (Blue) - Smoothed
+                {
+                    label: 'Filter-Passed (Smoothed)',
+                    data: filterPassedSmoothedData,
+                    borderColor: '#004085',
+                    backgroundColor: 'rgba(0, 64, 133, 0.1)',
+                    borderWidth: 3.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4,
+                    fill: false,
+                    spanGaps: true,
+                    order: 2
+                },
+                // Signal-Created (Green) - Raw
+                {
+                    label: 'Signal-Created (Raw)',
+                    data: signalRawData,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 3
+                },
+                // Signal-Created (Green) - Smoothed
+                {
+                    label: 'Signal-Created (Smoothed)',
+                    data: signalSmoothedData,
+                    borderColor: '#1e7e34',
+                    backgroundColor: 'rgba(30, 126, 52, 0.1)',
+                    borderWidth: 3.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4,
+                    fill: false,
+                    spanGaps: true,
+                    order: 1
+                },
+                // All Earnings Std Dev - Upper
+                {
+                    label: 'All Earnings +1 SD',
+                    data: allEarningsRawUpper,
+                    borderColor: 'rgba(255, 193, 7, 0.3)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: 7,
+                    spanGaps: false,
+                    order: 5,
+                    hidden: true
+                },
+                // All Earnings Std Dev - Lower
+                {
+                    label: 'All Earnings -1 SD',
+                    data: allEarningsRawLower,
+                    borderColor: 'rgba(255, 193, 7, 0.3)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: false,
+                    order: 5,
+                    hidden: true
+                },
+                // Filter-Passed Std Dev - Upper
+                {
+                    label: 'Filter-Passed +1 SD',
+                    data: filterPassedRawUpper,
+                    borderColor: 'rgba(0, 123, 255, 0.3)',
+                    backgroundColor: 'rgba(0, 123, 255, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: 9,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                },
+                // Filter-Passed Std Dev - Lower
+                {
+                    label: 'Filter-Passed -1 SD',
+                    data: filterPassedRawLower,
+                    borderColor: 'rgba(0, 123, 255, 0.3)',
+                    backgroundColor: 'rgba(0, 123, 255, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                },
+                // Signal-Created Std Dev - Upper
+                {
+                    label: 'Signal-Created +1 SD',
+                    data: signalRawUpper,
+                    borderColor: 'rgba(40, 167, 69, 0.3)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: 11,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                },
+                // Signal-Created Std Dev - Lower
+                {
+                    label: 'Signal-Created -1 SD',
+                    data: signalRawLower,
+                    borderColor: 'rgba(40, 167, 69, 0.3)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                },
+                // Top 30% Performers (Purple) - Raw
+                {
+                    label: 'Top 30% Performers (Raw)',
+                    data: top30RawData,
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 3
+                },
+                // Top 30% Performers (Purple) - Smoothed
+                {
+                    label: 'Top 30% Performers (Smoothed)',
+                    data: top30SmoothedData,
+                    borderColor: '#8e44ad',
+                    backgroundColor: 'rgba(142, 68, 173, 0.1)',
+                    borderWidth: 3.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4,
+                    fill: false,
+                    spanGaps: true,
+                    order: 1
+                },
+                // Top 30% Performers Std Dev - Upper
+                {
+                    label: 'Top 30% Performers +1 SD',
+                    data: top30RawUpper,
+                    borderColor: 'rgba(155, 89, 182, 0.3)',
+                    backgroundColor: 'rgba(155, 89, 182, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: 13,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                },
+                // Top 30% Performers Std Dev - Lower
+                {
+                    label: 'Top 30% Performers -1 SD',
+                    data: top30RawLower,
+                    borderColor: 'rgba(155, 89, 182, 0.3)',
+                    backgroundColor: 'rgba(155, 89, 182, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                },
+                // Bottom 30% Performers (Red) - Raw
+                {
+                    label: 'Bottom 30% Performers (Raw)',
+                    data: bottom30RawData,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 3
+                },
+                // Bottom 30% Performers (Red) - Smoothed
+                {
+                    label: 'Bottom 30% Performers (Smoothed)',
+                    data: bottom30SmoothedData,
+                    borderColor: '#c0392b',
+                    backgroundColor: 'rgba(192, 57, 43, 0.1)',
+                    borderWidth: 3.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4,
+                    fill: false,
+                    spanGaps: true,
+                    order: 1
+                },
+                // Bottom 30% Performers Std Dev - Upper
+                {
+                    label: 'Bottom 30% Performers +1 SD',
+                    data: bottom30RawUpper,
+                    borderColor: 'rgba(231, 76, 60, 0.3)',
+                    backgroundColor: 'rgba(231, 76, 60, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: 17,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                },
+                // Bottom 30% Performers Std Dev - Lower
+                {
+                    label: 'Bottom 30% Performers -1 SD',
+                    data: bottom30RawLower,
+                    borderColor: 'rgba(231, 76, 60, 0.3)',
+                    backgroundColor: 'rgba(231, 76, 60, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: false,
+                    spanGaps: true,
+                    order: 5,
+                    hidden: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            onClick: function(event, activeElements, chart) {
+                handleChartClick(event, chart);
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Average Intraday Movement on Earnings Days (Normalized to 9:00 = 100%)',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        filter: function(legendItem, chartData) {
+                            // Hide lower std dev bands from legend (show only upper which represents both)
+                            const label = legendItem.text;
+                            if (label.includes('-1 SD')) {
+                                return false;
+                            }
+                            // Rename upper band to just "Std Dev"
+                            if (label.includes('+1 SD')) {
+                                legendItem.text = label.replace('+1 SD', 'Std Dev');
+                            }
+                            return true;
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += context.parsed.y.toFixed(2) + '%';
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time of Day',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        maxTicksLimit: 20,
+                        callback: function(value, index) {
+                            // Show every 30 minutes
+                            const time = allLabels[index];
+                            if (time && (time.endsWith(':00') || time.endsWith(':30'))) {
+                                return time;
+                            }
+                            return '';
+                        }
+                    },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Price (% relative to 9:00)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + '%';
+                        }
+                    },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    };
+
+    const earningsChart = new Chart(ctx, config);
+
+    // ROI Calculator State
+    let purchasePoint = null;
+    let sellPoint = null;
+    let purchaseAnnotation = null;
+    let sellAnnotation = null;
+
+    function handleChartClick(event, chart) {
+        const canvasPosition = Chart.helpers.getRelativePosition(event, chart);
+        const dataX = chart.scales.x.getValueForPixel(canvasPosition.x);
+        const dataY = chart.scales.y.getValueForPixel(canvasPosition.y);
+
+        if (dataX === undefined || dataX < 0 || dataX >= allLabels.length) {
+            return;
+        }
+
+        const clickedTime = allLabels[Math.round(dataX)];
+        const clickedIndex = Math.round(dataX);
+
+        // First click: set purchase point
+        if (!purchasePoint) {
+            purchasePoint = { time: clickedTime, index: clickedIndex };
+            updateMarkerDisplay('purchase', clickedTime, clickedIndex);
+            addVerticalLine(chart, clickedIndex, 'rgba(76, 175, 80, 0.5)'); // Green line
+        }
+        // Second click: set sell point
+        else if (!sellPoint) {
+            sellPoint = { time: clickedTime, index: clickedIndex };
+            updateMarkerDisplay('sell', clickedTime, clickedIndex);
+            addVerticalLine(chart, clickedIndex, 'rgba(244, 67, 54, 0.5)'); // Red line
+            calculateROI();
+        }
+        // Third click: reset
+        else {
+            clearROISelection();
+        }
+    }
+
+    function updateMarkerDisplay(type, time, index) {
+        const timeElement = document.getElementById(type + 'Time');
+        const priceElement = document.getElementById(type + 'Price');
+
+        timeElement.textContent = time;
+
+        // Calculate average price across all visible raw lines at this time
+        const prices = [];
+        [0, 2, 4].forEach(datasetIndex => {
+            const dataset = earningsChart.data.datasets[datasetIndex];
+            if (!dataset.hidden && dataset.data[index] !== null) {
+                prices.push(dataset.data[index]);
+            }
+        });
+
+        if (prices.length > 0) {
+            const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+            priceElement.textContent = `(avg: ${avgPrice.toFixed(2)}%)`;
+        }
+    }
+
+    function addVerticalLine(chart, index, color) {
+        const isPurchase = purchasePoint && !sellPoint;
+        const datasetLabel = isPurchase ? '📍 Purchase' : '📍 Sell';
+
+        // Create a vertical line by adding a dataset with only two points at the extremes
+        const minY = Math.min(...chart.scales.y.ticks.map(t => t.value));
+        const maxY = Math.max(...chart.scales.y.ticks.map(t => t.value));
+
+        const lineData = new Array(allLabels.length).fill(null);
+        lineData[index] = minY; // Bottom point
+        lineData[index + (index < allLabels.length - 1 ? 1 : -1)] = maxY; // Top point (use adjacent index)
+
+        const verticalLineDataset = {
+            label: datasetLabel,
+            data: lineData,
+            borderColor: color,
+            backgroundColor: color,
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false,
+            type: 'line',
+            order: 0, // Draw on top
+            spanGaps: false
+        };
+
+        // Add as new dataset
+        chart.data.datasets.push(verticalLineDataset);
+        chart.update('none'); // Update without animation
+    }
+
+    async function calculateROI() {
+        if (!purchasePoint || !sellPoint) return;
+
+        const resultsDiv = document.getElementById('roiResults');
+        const breakdownDiv = document.getElementById('roiBreakdown');
+        const clearBtn = document.getElementById('clearROI');
+
+        // Show loading state
+        resultsDiv.style.display = 'block';
+        clearBtn.style.display = 'inline-block';
+        breakdownDiv.innerHTML = '<p>Calculating per-stock ROI...</p>';
+
+        try {
+            // Call API to calculate per-stock ROI
+            const response = await fetch(
+                `/api/calculate-roi?purchase_time=${purchasePoint.time}&sell_time=${sellPoint.time}&categories=all,filter,signal`
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to calculate ROI');
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                breakdownDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
+                return;
+            }
+
+            // Build results table
+            let html = '<table class="roi-table">';
+            html += '<thead><tr>';
+            html += '<th>Category</th>';
+            html += '<th>Stocks</th>';
+            html += '<th>ROI (Hold)</th>';
+            html += '<th>1% Exit</th>';
+            html += '<th>2% Exit</th>';
+            html += '<th>3% Exit</th>';
+            html += '<th>4% Exit</th>';
+            html += '<th>5% Exit</th>';
+            html += '</tr></thead>';
+            html += '<tbody>';
+
+            const categories = [
+                { key: 'All Earnings', color: '#ffc107' },
+                { key: 'Filter-Passed', color: '#007bff' },
+                { key: 'Signal-Created', color: '#28a745' }
+            ];
+
+            categories.forEach(cat => {
+                const result = data.results[cat.key];
+                if (result && result.roi !== null) {
+                    const roiColor = result.roi >= 0 ? '#28a745' : '#dc3545';
+                    const roi1pctColor = result.roi_with_1pct_exit >= 0 ? '#28a745' : '#dc3545';
+                    const roi2pctColor = result.roi_with_2pct_exit >= 0 ? '#28a745' : '#dc3545';
+                    const roi3pctColor = result.roi_with_3pct_exit >= 0 ? '#28a745' : '#dc3545';
+                    const roi4pctColor = result.roi_with_4pct_exit >= 0 ? '#28a745' : '#dc3545';
+                    const roi5pctColor = result.roi_with_5pct_exit >= 0 ? '#28a745' : '#dc3545';
+
+                    html += `<tr>`;
+                    html += `<td><span style="color: ${cat.color}; font-weight: bold;">●</span> ${cat.key}</td>`;
+                    html += `<td>${result.stock_count}</td>`;
+                    html += `<td style="color: ${roiColor}; font-weight: bold;">${result.roi >= 0 ? '+' : ''}${result.roi.toFixed(2)}%</td>`;
+                    html += `<td style="color: ${roi1pctColor}; font-weight: bold;">${result.roi_with_1pct_exit >= 0 ? '+' : ''}${result.roi_with_1pct_exit.toFixed(2)}%</td>`;
+                    html += `<td style="color: ${roi2pctColor}; font-weight: bold;">${result.roi_with_2pct_exit >= 0 ? '+' : ''}${result.roi_with_2pct_exit.toFixed(2)}%</td>`;
+                    html += `<td style="color: ${roi3pctColor}; font-weight: bold;">${result.roi_with_3pct_exit >= 0 ? '+' : ''}${result.roi_with_3pct_exit.toFixed(2)}%</td>`;
+                    html += `<td style="color: ${roi4pctColor}; font-weight: bold;">${result.roi_with_4pct_exit >= 0 ? '+' : ''}${result.roi_with_4pct_exit.toFixed(2)}%</td>`;
+                    html += `<td style="color: ${roi5pctColor}; font-weight: bold;">${result.roi_with_5pct_exit >= 0 ? '+' : ''}${result.roi_with_5pct_exit.toFixed(2)}%</td>`;
+                    html += `</tr>`;
+                } else if (result && result.error) {
+                    html += `<tr>`;
+                    html += `<td><span style="color: ${cat.color}; font-weight: bold;">●</span> ${cat.key}</td>`;
+                    html += `<td colspan="7" style="color: #999; font-style: italic;">${result.error}</td>`;
+                    html += `</tr>`;
+                }
+            });
+
+            html += '</tbody></table>';
+
+            html += '<div class="roi-explanation">';
+            html += '<p class="roi-note"><strong>Per-Stock Calculation:</strong> ROI calculated individually for each stock, then aggregated (averaged).</p>';
+            html += '<p class="roi-note"><strong>Hold:</strong> Buy at purchase time, sell at sell time.</p>';
+            html += '<p class="roi-note"><strong>1-5% Exit:</strong> Sell automatically if price reaches the target profit (1%, 2%, 3%, 4%, or 5%) before sell time, otherwise sell at sell time.</p>';
+            html += '<p class="roi-note"><strong>Interpretation:</strong> Compare exit strategies to find which profit target maximizes returns for your time window.</p>';
+            html += `<p class="roi-note"><strong>Time window:</strong> ${purchasePoint.time} → ${sellPoint.time}</p>`;
+            html += '</div>';
+
+            breakdownDiv.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error calculating ROI:', error);
+            breakdownDiv.innerHTML = `<p class="error">Error calculating ROI: ${error.message}</p>`;
+        }
+    }
+
+    function clearROISelection() {
+        purchasePoint = null;
+        sellPoint = null;
+
+        document.getElementById('purchaseTime').textContent = 'Not set';
+        document.getElementById('purchasePrice').textContent = '';
+        document.getElementById('sellTime').textContent = 'Not set';
+        document.getElementById('sellPrice').textContent = '';
+        document.getElementById('roiResults').style.display = 'none';
+        document.getElementById('clearROI').style.display = 'none';
+
+        // Remove vertical line datasets (they have 📍 in label)
+        earningsChart.data.datasets = earningsChart.data.datasets.filter(
+            dataset => !dataset.label.includes('📍')
+        );
+        earningsChart.update('none');
+    }
+
+    document.getElementById('clearROI').addEventListener('click', clearROISelection);
+
+    // Chart controls
+    // Dataset indices:
+    // 0: All Earnings (Raw), 1: All Earnings (Smoothed)
+    // 2: Filter-Passed (Raw), 3: Filter-Passed (Smoothed)
+    // 4: Signal-Created (Raw), 5: Signal-Created (Smoothed)
+    // 6-7: All Earnings Std Dev, 8-9: Filter-Passed Std Dev, 10-11: Signal-Created Std Dev
+
+    // All Earnings controls
+    document.getElementById('showAllEarningsRaw').addEventListener('change', function(e) {
+        earningsChart.data.datasets[0].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showAllEarningsSmoothed').addEventListener('change', function(e) {
+        earningsChart.data.datasets[1].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showAllEarningsStdDev').addEventListener('change', function(e) {
+        earningsChart.data.datasets[6].hidden = !e.target.checked;
+        earningsChart.data.datasets[7].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    // Filter-Passed controls
+    document.getElementById('showFilterPassedRaw').addEventListener('change', function(e) {
+        earningsChart.data.datasets[2].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showFilterPassedSmoothed').addEventListener('change', function(e) {
+        earningsChart.data.datasets[3].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showFilterPassedStdDev').addEventListener('change', function(e) {
+        earningsChart.data.datasets[8].hidden = !e.target.checked;
+        earningsChart.data.datasets[9].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    // Signal-Created controls
+    document.getElementById('showSignalsRaw').addEventListener('change', function(e) {
+        earningsChart.data.datasets[4].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showSignalsSmoothed').addEventListener('change', function(e) {
+        earningsChart.data.datasets[5].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showSignalsStdDev').addEventListener('change', function(e) {
+        earningsChart.data.datasets[10].hidden = !e.target.checked;
+        earningsChart.data.datasets[11].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    // Top 30% Performers controls
+    document.getElementById('showTop30Raw').addEventListener('change', function(e) {
+        earningsChart.data.datasets[12].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showTop30Smoothed').addEventListener('change', function(e) {
+        earningsChart.data.datasets[13].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showTop30StdDev').addEventListener('change', function(e) {
+        earningsChart.data.datasets[14].hidden = !e.target.checked;
+        earningsChart.data.datasets[15].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    // Bottom 30% Performers controls
+    document.getElementById('showBottom30Raw').addEventListener('change', function(e) {
+        earningsChart.data.datasets[16].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showBottom30Smoothed').addEventListener('change', function(e) {
+        earningsChart.data.datasets[17].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showBottom30StdDev').addEventListener('change', function(e) {
+        earningsChart.data.datasets[18].hidden = !e.target.checked;
+        earningsChart.data.datasets[19].hidden = !e.target.checked;
+        earningsChart.update();
+    });
+
+    document.getElementById('showGrid').addEventListener('change', function(e) {
+        earningsChart.options.scales.x.grid.display = e.target.checked;
+        earningsChart.options.scales.y.grid.display = e.target.checked;
+        earningsChart.update();
+    });
+</script>
+{% endif %}
+
+<style>
+    .earnings-analysis {
+        padding: 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .subtitle {
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    .info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #007bff;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+    .stats-row {
+        display: flex;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        font-size: 1.4em;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .chart-controls {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 25px;
+    }
+
+    .control-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .group-title {
+        font-weight: 600;
+        font-size: 0.9em;
+        margin-right: 8px;
+        white-space: nowrap;
+    }
+
+    .compact-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        font-size: 0.85em;
+        color: #666;
+    }
+
+    .compact-label input[type="checkbox"] {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 600px;
+        margin-bottom: 40px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .interpretation-guide {
+        background: #f8f9fa;
+        padding: 30px;
+        border-radius: 8px;
+        margin-top: 40px;
+    }
+
+    .interpretation-guide h3 {
+        margin-top: 0;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .interpretation-guide ul {
+        margin: 10px 0;
+        padding-left: 25px;
+    }
+
+    .interpretation-guide li {
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-top: 40px;
+    }
+
+    .empty-state h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin: 15px 0;
+    }
+
+    .empty-state pre {
+        margin: 20px 0;
+    }
+
+    @media (max-width: 768px) {
+        .stats-row {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-controls {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chart-container {
+            height: 400px;
+        }
+
+        .roi-calculator {
+            padding: 15px;
+        }
+
+        .roi-table {
+            font-size: 0.9em;
+        }
+    }
+
+    /* ROI Calculator Styles */
+    .roi-calculator {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 25px;
+        margin-top: 30px;
+        border: 2px solid #e0e0e0;
+    }
+
+    .roi-calculator h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .roi-instructions {
+        color: #666;
+        font-size: 0.9em;
+        margin-bottom: 20px;
+        font-style: italic;
+    }
+
+    .roi-markers {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .roi-marker {
+        flex: 1;
+        min-width: 200px;
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        border: 2px solid #ddd;
+    }
+
+    .marker-label {
+        font-weight: bold;
+        color: #555;
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+    }
+
+    .marker-value {
+        font-size: 1.2em;
+        color: #007bff;
+        font-weight: 600;
+        display: block;
+    }
+
+    .marker-price {
+        font-size: 0.9em;
+        color: #666;
+        display: block;
+        margin-top: 3px;
+    }
+
+    .roi-results {
+        background: white;
+        padding: 20px;
+        border-radius: 6px;
+        margin-top: 20px;
+        border: 2px solid #28a745;
+    }
+
+    .roi-results h4 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #28a745;
+    }
+
+    .roi-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+
+    .roi-table th,
+    .roi-table td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .roi-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #555;
+        font-size: 0.9em;
+    }
+
+    .roi-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .roi-note {
+        font-size: 0.85em;
+        color: #666;
+        font-style: italic;
+        margin: 5px 0;
+    }
+
+    .roi-explanation {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 15px;
+        border-left: 4px solid #007bff;
+    }
+
+    .roi-explanation .roi-note {
+        margin: 8px 0;
+    }
+
+    .roi-explanation .roi-note strong {
+        color: #333;
+    }
+
+    .error {
+        color: #dc3545;
+        font-weight: bold;
+        padding: 15px;
+        background: #f8d7da;
+        border-radius: 4px;
+        border: 1px solid #dc3545;
+    }
+
+    #clearROI {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-top: 15px;
+    }
+
+    #clearROI:hover {
+        background: #c82333;
+    }
+</style>
+{% endblock %}

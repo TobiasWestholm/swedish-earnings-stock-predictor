@@ -70,7 +70,7 @@ def main():
 
         # Display results
         print("\n" + "=" * 95)
-        print(f"SVEA SURVEILLANCE - STOCK SCREENER")
+        print(f"EARNINGS PREDICTOR - STOCK SCREENER")
         print(f"Date: {target_date}")
         print("=" * 95)
 

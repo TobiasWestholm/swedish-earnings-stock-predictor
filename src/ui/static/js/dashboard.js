@@ -1,11 +1,11 @@
-// Svea Surveillance - Dashboard JavaScript
+// Earnings Predictor - Dashboard JavaScript
 
 // Auto-refresh functionality (for Phase 3+ when live monitoring is active)
 let autoRefreshInterval = null;
 
 // Initialize dashboard on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Svea Surveillance Dashboard Loaded');
+    console.log('Earnings Predictor Dashboard Loaded');
 
     // Check if we're on a page that needs auto-refresh
     const currentPage = window.location.pathname;

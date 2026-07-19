@@ -70,7 +70,7 @@ def main():
             sys.exit(1)
 
         print("\n" + "=" * 80)
-        print("SVEA SURVEILLANCE - LIVE MONITORING")
+        print("EARNINGS PREDICTOR - LIVE MONITORING")
         print("=" * 80)
         print(f"\n✓ Watchlist for {target_date}: {len(watchlist)} stocks")
         print("\nStocks to monitor:")

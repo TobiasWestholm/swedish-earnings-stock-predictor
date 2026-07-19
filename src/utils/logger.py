@@ -1,4 +1,4 @@
-"""Logging setup for Svea Surveillance."""
+"""Logging setup for Earnings Predictor."""
 
 import logging
 import sys
@@ -72,8 +72,8 @@ def get_default_logger() -> logging.Logger:
         log_config = config.get('logging', {})
 
         return setup_logger(
-            name='svea_surveillance',
-            log_file=log_config.get('file', 'logs/svea_surveillance.log'),
+            name='earnings_predictor',
+            log_file=log_config.get('file', 'logs/earnings_predictor.log'),
             level=log_config.get('level', 'INFO'),
             console=True
         )
@@ -81,8 +81,8 @@ def get_default_logger() -> logging.Logger:
         # Fallback if config can't be loaded
         print(f"Warning: Could not load logging config: {e}")
         return setup_logger(
-            name='svea_surveillance',
-            log_file='logs/svea_surveillance.log',
+            name='earnings_predictor',
+            log_file='logs/earnings_predictor.log',
             level='INFO',
             console=True
         )

@@ -1,194 +1,314 @@
 {% extends "base.html" %}
 
-{% block title %}History - Svea Surveillance{% endblock %}
+{% block title %}History - Earnings Predictor{% endblock %}
+
+{% macro render_stats(stats, title) %}
+<div class="stats-container">
+    <h3>{{ title }}</h3>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value">{{ stats.total_trades }}</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Closed Trades</div>
+            <div class="stat-value">{{ stats.closed_trades }}</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Open Trades</div>
+            <div class="stat-value">{{ stats.open_trades }}</div>
+        </div>
+        <div class="stat-box {{ 'positive' if stats.profitable_trades > 0 else '' }}">
+            <div class="stat-label">Profitable</div>
+            <div class="stat-value">{{ stats.profitable_trades }}</div>
+        </div>
+        <div class="stat-box {{ 'negative' if stats.losing_trades > 0 else '' }}">
+            <div class="stat-label">At Loss</div>
+            <div class="stat-value">{{ stats.losing_trades }}</div>
+        </div>
+        <div class="stat-box {{ 'positive' if stats.avg_return > 0 else 'negative' if stats.avg_return < 0 else '' }}">
+            <div class="stat-label">Avg Return</div>
+            <div class="stat-value">
+                {% if stats.avg_return %}
+                    {{ "{:+.2f}".format(stats.avg_return) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-box {{ 'positive' if stats.win_rate >= 50 else 'negative' if stats.win_rate > 0 else '' }}">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value">
+                {% if stats.win_rate %}
+                    {{ "%.1f"|format(stats.win_rate) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro render_overall_stats(stats) %}
+<div class="stats-container">
+    <h3>Overall Statistics (All Time)</h3>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value">{{ stats.total_trades }}</div>
+        </div>
+        <div class="stat-box {{ 'positive' if stats.profitable_trades > 0 else '' }}">
+            <div class="stat-label">Profitable</div>
+            <div class="stat-value">{{ stats.profitable_trades }}</div>
+        </div>
+        <div class="stat-box {{ 'negative' if stats.losing_trades > 0 else '' }}">
+            <div class="stat-label">At Loss</div>
+            <div class="stat-value">{{ stats.losing_trades }}</div>
+        </div>
+        <div class="stat-box {{ 'positive' if stats.avg_return > 0 else 'negative' if stats.avg_return < 0 else '' }}">
+            <div class="stat-label">Avg Return</div>
+            <div class="stat-value">
+                {% if stats.avg_return %}
+                    {{ "{:+.2f}".format(stats.avg_return) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-box {{ 'positive' if stats.win_rate >= 50 else 'negative' if stats.win_rate > 0 else '' }}">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value">
+                {% if stats.win_rate %}
+                    {{ "%.1f"|format(stats.win_rate) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-box {{ 'positive' if stats.max_return > 0 else '' }}">
+            <div class="stat-label">Best Trade</div>
+            <div class="stat-value">
+                {% if stats.max_return %}
+                    {{ "{:+.2f}".format(stats.max_return) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-box {{ 'negative' if stats.min_return < 0 else '' }}">
+            <div class="stat-label">Worst Trade</div>
+            <div class="stat-value">
+                {% if stats.min_return %}
+                    {{ "{:+.2f}".format(stats.min_return) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro render_trade_table(trades, strategy_name) %}
+{% if trades %}
+<h3>Trade History</h3>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Ticker</th>
+            <th>Entry Time</th>
+            <th>Entry Price</th>
+            <th>Exit Time</th>
+            <th>Exit Price</th>
+            <th>Exit Reason</th>
+            <th>P&L %</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for trade in trades %}
+        <tr class="trade-row {{ 'open' if trade.status == 'open' else 'closed' }}">
+            <td>
+                <span class="status-badge status-{{ trade.status }}">
+                    {{ trade.status|upper }}
+                </span>
+            </td>
+            <td class="ticker"><strong>{{ trade.ticker }}</strong></td>
+            <td>
+                {% if trade.entry_time %}
+                    {{ trade.entry_time[11:19] if 'T' in trade.entry_time else trade.entry_time.split()[1] if ' ' in trade.entry_time else trade.entry_time }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>{{ "%.2f"|format(trade.entry_price) }} SEK</td>
+            <td>
+                {% if trade.exit_time %}
+                    {{ trade.exit_time[11:19] if 'T' in trade.exit_time else trade.exit_time.split()[1] if ' ' in trade.exit_time else trade.exit_time }}
+                {% else %}
+                    <span class="pending">Pending</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if trade.exit_price %}
+                    {{ "%.2f"|format(trade.exit_price) }} SEK
+                {% else %}
+                    <span class="pending">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if trade.exit_reason %}
+                    <span class="exit-reason exit-{{ trade.exit_reason }}">
+                        {% if trade.exit_reason == 'eod' %}
+                            EOD Close
+                        {% elif trade.exit_reason == 'profit_target' %}
+                            Profit Target
+                        {% elif trade.exit_reason == 'eod_fallback' %}
+                            EOD Fallback
+                        {% else %}
+                            {{ trade.exit_reason }}
+                        {% endif %}
+                    </span>
+                {% else %}
+                    <span class="pending">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if trade.pnl_percent is not none %}
+                    <span class="pnl {{ 'positive' if trade.pnl_percent > 0 else 'negative' if trade.pnl_percent < 0 else 'neutral' }}">
+                        <strong>{{ "{:+.2f}".format(trade.pnl_percent) }}%</strong>
+                    </span>
+                {% else %}
+                    <span class="pending">-</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    <p>No {{ strategy_name }} trades found for {{ date }}.</p>
+    <p>Trades are automatically created when entry signals are detected during the morning session (9:20-10:00 CET).</p>
+</div>
+{% endif %}
+{% endmacro %}
 
 {% block content %}
 <div class="history">
     <div class="page-header">
         <h2>Hypothetical Trade History - {{ date }}</h2>
-        <span class="signal-count">{{ trades|length }} trade{{ 's' if trades|length != 1 else '' }} on {{ date }}</span>
+        {% set total_count = (eod_trades|length) %}
+        {% for strategy in strategies %}
+            {% set total_count = total_count + (strategy.trades|length) %}
+        {% endfor %}
+        <span class="signal-count">{{ total_count }} total trade{{ 's' if total_count != 1 else '' }} on {{ date }}</span>
     </div>
 
-    <div class="info-box">
-        <p><strong>Hypothetical Trading:</strong> Paper trades automatically created when first signal detected for each ticker during morning session (9:20-10:00).</p>
-        <p><strong>Exit Time:</strong> All positions automatically closed at 17:00 CET (end of trading day).</p>
-        <p><em>These are simulated trades for performance tracking purposes only.</em></p>
-    </div>
-
-    <!-- Daily Statistics -->
-    <div class="stats-container">
-        <h3>Daily Statistics ({{ date }})</h3>
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Total Trades</div>
-                <div class="stat-value">{{ stats.total_trades }}</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Closed Trades</div>
-                <div class="stat-value">{{ stats.closed_trades }}</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Open Trades</div>
-                <div class="stat-value">{{ stats.open_trades }}</div>
-            </div>
-            <div class="stat-box {{ 'positive' if stats.profitable_trades > 0 else '' }}">
-                <div class="stat-label">Profitable</div>
-                <div class="stat-value">{{ stats.profitable_trades }}</div>
-            </div>
-            <div class="stat-box {{ 'negative' if stats.losing_trades > 0 else '' }}">
-                <div class="stat-label">At Loss</div>
-                <div class="stat-value">{{ stats.losing_trades }}</div>
-            </div>
-            <div class="stat-box {{ 'positive' if stats.avg_return > 0 else 'negative' if stats.avg_return < 0 else '' }}">
-                <div class="stat-label">Avg Return</div>
-                <div class="stat-value">
-                    {% if stats.avg_return %}
-                        {{ "{:+.2f}".format(stats.avg_return) }}%
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </div>
-            </div>
-            <div class="stat-box {{ 'positive' if stats.win_rate >= 50 else 'negative' if stats.win_rate > 0 else '' }}">
-                <div class="stat-label">Win Rate</div>
-                <div class="stat-value">
-                    {% if stats.win_rate %}
-                        {{ "%.1f"|format(stats.win_rate) }}%
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Overall Statistics -->
-    <div class="stats-container">
-        <h3>Overall Statistics (All Time)</h3>
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Total Trades</div>
-                <div class="stat-value">{{ overall_stats.total_trades }}</div>
-            </div>
-            <div class="stat-box {{ 'positive' if overall_stats.profitable_trades > 0 else '' }}">
-                <div class="stat-label">Profitable</div>
-                <div class="stat-value">{{ overall_stats.profitable_trades }}</div>
-            </div>
-            <div class="stat-box {{ 'negative' if overall_stats.losing_trades > 0 else '' }}">
-                <div class="stat-label">At Loss</div>
-                <div class="stat-value">{{ overall_stats.losing_trades }}</div>
-            </div>
-            <div class="stat-box {{ 'positive' if overall_stats.avg_return > 0 else 'negative' if overall_stats.avg_return < 0 else '' }}">
-                <div class="stat-label">Avg Return</div>
-                <div class="stat-value">
-                    {% if overall_stats.avg_return %}
-                        {{ "{:+.2f}".format(overall_stats.avg_return) }}%
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </div>
-            </div>
-            <div class="stat-box {{ 'positive' if overall_stats.win_rate >= 50 else 'negative' if overall_stats.win_rate > 0 else '' }}">
-                <div class="stat-label">Win Rate</div>
-                <div class="stat-value">
-                    {% if overall_stats.win_rate %}
-                        {{ "%.1f"|format(overall_stats.win_rate) }}%
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </div>
-            </div>
-            <div class="stat-box {{ 'positive' if overall_stats.max_return > 0 else '' }}">
-                <div class="stat-label">Best Trade</div>
-                <div class="stat-value">
-                    {% if overall_stats.max_return %}
-                        {{ "{:+.2f}".format(overall_stats.max_return) }}%
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </div>
-            </div>
-            <div class="stat-box {{ 'negative' if overall_stats.min_return < 0 else '' }}">
-                <div class="stat-label">Worst Trade</div>
-                <div class="stat-value">
-                    {% if overall_stats.min_return %}
-                        {{ "{:+.2f}".format(overall_stats.min_return) }}%
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Trade History Table -->
-    {% if trades %}
-    <h3>Trade History</h3>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Status</th>
-                <th>Ticker</th>
-                <th>Entry Time</th>
-                <th>Entry Price</th>
-                <th>Exit Time</th>
-                <th>Exit Price</th>
-                <th>P&L %</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for trade in trades %}
-            <tr class="trade-row {{ 'open' if trade.status == 'open' else 'closed' }}">
-                <td>
-                    <span class="status-badge status-{{ trade.status }}">
-                        {{ trade.status|upper }}
-                    </span>
-                </td>
-                <td class="ticker"><strong>{{ trade.ticker }}</strong></td>
-                <td>
-                    {% if trade.entry_time %}
-                        {{ trade.entry_time[11:19] if 'T' in trade.entry_time else trade.entry_time.split()[1] if ' ' in trade.entry_time else trade.entry_time }}
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </td>
-                <td>{{ "%.2f"|format(trade.entry_price) }} SEK</td>
-                <td>
-                    {% if trade.exit_time %}
-                        {{ trade.exit_time[11:19] if 'T' in trade.exit_time else trade.exit_time.split()[1] if ' ' in trade.exit_time else trade.exit_time }}
-                    {% else %}
-                        <span class="pending">Pending</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if trade.exit_price %}
-                        {{ "%.2f"|format(trade.exit_price) }} SEK
-                    {% else %}
-                        <span class="pending">-</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if trade.pnl_percent is not none %}
-                        <span class="pnl {{ 'positive' if trade.pnl_percent > 0 else 'negative' if trade.pnl_percent < 0 else 'neutral' }}">
-                            <strong>{{ "{:+.2f}".format(trade.pnl_percent) }}%</strong>
-                        </span>
-                    {% else %}
-                        <span class="pending">-</span>
-                    {% endif %}
-                </td>
-            </tr>
+    <!-- Strategy Tabs -->
+    <div class="strategy-tabs">
+        <!-- Tab Buttons -->
+        <div class="tab-buttons">
+            <button class="tab-button active" data-tab="eod">EOD Strategy</button>
+            {% for strategy in strategies %}
+            <button class="tab-button" data-tab="{{ strategy.type }}">{{ strategy.name }}</button>
             {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="empty-state">
-        <p>No hypothetical trades found for {{ date }}.</p>
-        <p>Trades are automatically created when entry signals are detected during the morning session (9:20-10:00 CET).</p>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- EOD Strategy Tab -->
+            <div class="tab-pane active" id="eod-pane">
+                <div class="info-box">
+                    <p><strong>EOD (End-of-Day) Strategy:</strong> Paper trades automatically created when first signal detected for each ticker during morning session (9:20-10:00).</p>
+                    <p><strong>Exit Logic:</strong> All positions automatically closed at <strong>17:00 CET</strong> (end of trading day).</p>
+                    <p><em>These are simulated trades for performance tracking purposes only.</em></p>
+                </div>
+
+                {{ render_stats(eod_stats, "Daily Statistics (" + date + ")") }}
+                {{ render_overall_stats(eod_overall) }}
+                {{ render_trade_table(eod_trades, "EOD strategy") }}
+            </div>
+
+            <!-- Profit Target Strategy Tabs -->
+            {% for strategy in strategies %}
+            <div class="tab-pane" id="{{ strategy.type }}-pane">
+                <div class="info-box">
+                    <p><strong>{{ strategy.name }} Strategy:</strong> Paper trades automatically created when first signal detected for each ticker during morning session (9:20-10:00).</p>
+                    <p><strong>Exit Logic:</strong> Positions closed when <strong>{{ strategy.target_pct }}% profit target</strong> reached, or at <strong>17:00 CET</strong> if target not reached.</p>
+                    <p><em>These are simulated trades for performance tracking purposes only.</em></p>
+                </div>
+
+                {{ render_stats(strategy.stats, "Daily Statistics (" + date + ")") }}
+                {{ render_overall_stats(strategy.overall) }}
+                {{ render_trade_table(strategy.trades, strategy.name + " strategy") }}
+            </div>
+            {% endfor %}
+        </div>
     </div>
-    {% endif %}
 </div>
 
 <style>
+    /* Tab Navigation */
+    .strategy-tabs {
+        margin-top: 20px;
+    }
+
+    .tab-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .tab-button {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 0.95em;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.3s ease;
+        position: relative;
+        bottom: -2px;
+    }
+
+    .tab-button:hover {
+        color: #2c3e50;
+        background: #f8f9fa;
+    }
+
+    .tab-button.active {
+        color: #2c3e50;
+        border-bottom-color: #007bff;
+        font-weight: 600;
+    }
+
+    .tab-pane {
+        display: none;
+    }
+
+    .tab-pane.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Statistics */
     .stats-container {
         margin: 20px 0;
         padding: 20px;
@@ -204,7 +324,7 @@
 
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: 15px;
     }
 
@@ -246,6 +366,7 @@
         color: #721c24;
     }
 
+    /* Status Badges */
     .status-badge {
         display: inline-block;
         padding: 4px 10px;
@@ -266,6 +387,34 @@
         border: 1px solid #c3e6cb;
     }
 
+    /* Exit Reason Badges */
+    .exit-reason {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+
+    .exit-profit_target {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .exit-eod {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    .exit-eod_fallback {
+        background: #e2e3e5;
+        color: #383d41;
+        border: 1px solid #d6d8db;
+    }
+
+    /* P&L */
     .pnl {
         display: inline-block;
         padding: 4px 8px;
@@ -309,5 +458,43 @@
     .trade-row.closed {
         opacity: 0.95;
     }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .tab-buttons {
+            gap: 3px;
+        }
+
+        .tab-button {
+            padding: 8px 12px;
+            font-size: 0.85em;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
 </style>
+
+<script>
+    // Tab switching functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+
+                // Remove active class from all buttons and panes
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+
+                // Add active class to clicked button and corresponding pane
+                this.classList.add('active');
+                document.getElementById(targetTab + '-pane').classList.add('active');
+            });
+        });
+    });
+</script>
 {% endblock %}

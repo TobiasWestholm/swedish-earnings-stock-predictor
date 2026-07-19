@@ -33,7 +33,7 @@ class PaperTradingMonitor:
         """
         self.config = load_config(config_path)
         self.tracker = PaperTradingTracker()
-        self.monitor = LiveMonitor(config_path=config_path)
+        self.monitor = LiveMonitor()
 
         # Create strategy simulator with production config
         self.simulator = StrategySimulator(
@@ -152,9 +152,9 @@ class PaperTradingMonitor:
             print("  - Log outcome at end of day")
             print("🔔" * 40 + "\n")
 
-        # Start monitoring with custom callback
+        # Start monitoring
         try:
-            self.monitor.start(tickers, on_signal_callback=on_signal_detected)
+            self.monitor.run()
         except KeyboardInterrupt:
             print("\n\n⏹️  Monitoring stopped by user.")
             print("\nToday's Summary:")

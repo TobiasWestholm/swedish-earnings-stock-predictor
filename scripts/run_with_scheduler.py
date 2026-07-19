@@ -27,10 +27,27 @@ from src.utils.logger import setup_logger
 from src.utils.scheduler import start_scheduler
 from src.ui.app import create_app
 from src.utils.database import init_database
+from src.utils.config import load_config
 
 import logging
 
-logger = setup_logger()
+# Setup logging to file for all modules
+config = load_config()
+log_config = config.get('logging', {})
+logger = setup_logger(
+    name='earnings_predictor',
+    log_file=log_config.get('file', 'logs/earnings_predictor.log'),
+    level=log_config.get('level', 'INFO'),
+    console=True
+)
+
+# Ensure root logger also writes to file (for scheduler and other modules)
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+# Copy handlers from our logger to root logger if not already present
+for handler in logger.handlers:
+    if handler not in root_logger.handlers:
+        root_logger.addHandler(handler)
 
 
 def main():
@@ -60,7 +77,7 @@ def main():
     args = parser.parse_args()
 
     logger.info("=" * 80)
-    logger.info("SVEA SURVEILLANCE - STARTING WITH SCHEDULER")
+    logger.info("EARNINGS PREDICTOR - STARTING WITH SCHEDULER")
     logger.info("=" * 80)
 
     # Initialize database

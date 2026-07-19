@@ -1,15 +1,28 @@
-# Claude Code
-.claude/
+# ==========================================
+# Swedish Stock Earnings Predictor - GitHub .gitignore
+# ==========================================
 
-# Python
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python bytecode & cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -26,52 +39,39 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
-.venv/
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# IDEs
+# Operating System & IDEs
+.DS_Store
+**/.DS_Store
 .vscode/
 .idea/
+.claude/
+.gemini/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# Environment variables
-.env
-
-# Logs
+# Logs (keep logs directory structure via .gitkeep)
 logs/*.log
 *.log
+!logs/.gitkeep
 
-# Database
-data/trades.db
+# Databases
 data/*.db
+data/*.db-journal
+data/*.db-wal
 data/*.sqlite
+data/*.sqlite3
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Generated outputs, plots, and grid search results
+data/grid_search/
+data/plots/
+data/exports/
+data/backup/
+data/*.csv.bak
+*.png
 
-# Testing
+# Testing & Coverage
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Application specific
-data/*.csv.bak
-data/*.csv
-!data/all_tickers.txt
-data/backup/
-data/paper_trades.db
-
-# Exported data
-*.csv
-!data/all_tickers.txt
-
-# Claude Code
-.claude/
+.ipynb_checkpoints/

@@ -1,4 +1,4 @@
-"""Flask web application for Svea Surveillance dashboard."""
+"""Flask web application for Earnings Predictor dashboard."""
 
 from flask import Flask
 from datetime import datetime
@@ -22,8 +22,8 @@ def create_app():
     # Setup logging
     log_config = config.get('logging', {})
     logger = setup_logger(
-        name='svea_surveillance',
-        log_file=log_config.get('file', 'logs/svea_surveillance.log'),
+        name='earnings_predictor',
+        log_file=log_config.get('file', 'logs/earnings_predictor.log'),
         level=log_config.get('level', 'INFO')
     )
 
@@ -31,7 +31,7 @@ def create_app():
     app = Flask(__name__)
 
     # Configure Flask
-    app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-for-local-development-only')
+    app.config['SECRET_KEY'] = 'dev-secret-key-change-in-production'
     app.config['DEBUG'] = ui_config.get('debug', True)
 
     # Register routes

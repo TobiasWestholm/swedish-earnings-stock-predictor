@@ -239,7 +239,7 @@ def verify_dependencies():
 def run_full_verification():
     """Run all verification checks."""
     print("\n" + "█"*80)
-    print("SVEA SURVEILLANCE - SYSTEM VERIFICATION")
+    print("EARNINGS PREDICTOR - SYSTEM VERIFICATION")
     print("█"*80)
     print("\nThis script verifies your system is ready for paper trading.")
 
@@ -271,7 +271,7 @@ def run_full_verification():
         print("🎉 ALL CHECKS PASSED - SYSTEM READY FOR PAPER TRADING!")
         print("="*80)
         print("\nNext Steps:")
-        print("  1. Review PAPER_TRADING_GUIDE.md for workflow details")
+        print("  1. Review AGENTS.md for workflow details")
         print("  2. Run screener: python scripts/run_screener.py")
         print("  3. Start paper trading: python scripts/run_paper_trading.py")
         print("  4. End of day review: python scripts/paper_trading_dashboard.py")

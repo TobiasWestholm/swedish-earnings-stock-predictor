@@ -1,4 +1,4 @@
-"""Database utilities for Svea Surveillance."""
+"""Database utilities for Earnings Predictor."""
 
 import sqlite3
 import json
@@ -129,21 +129,97 @@ def init_database():
     """)
 
     # Hypothetical trades table (for paper trading results)
+    # Check if table needs migration for strategy support
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS hypothetical_trades (
+        SELECT name FROM sqlite_master
+        WHERE type='table' AND name='hypothetical_trades'
+    """)
+    table_exists = cursor.fetchone() is not None
+
+    if table_exists:
+        # Check if strategy_type column exists
+        cursor.execute("PRAGMA table_info(hypothetical_trades)")
+        columns = [col[1] for col in cursor.fetchall()]
+
+        if 'strategy_type' not in columns:
+            logger.info("Migrating hypothetical_trades table for strategy support")
+
+            # Create new table with strategy support
+            cursor.execute("""
+                CREATE TABLE hypothetical_trades_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ticker TEXT NOT NULL,
+                    date DATE NOT NULL,
+                    signal_id INTEGER,
+                    entry_time TIMESTAMP NOT NULL,
+                    entry_price REAL NOT NULL,
+                    exit_time TIMESTAMP,
+                    exit_price REAL,
+                    pnl_percent REAL,
+                    status TEXT DEFAULT 'open',
+                    strategy_type TEXT DEFAULT 'eod',
+                    profit_target_pct REAL,
+                    exit_reason TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (signal_id) REFERENCES signals(id),
+                    UNIQUE(ticker, date, strategy_type)
+                )
+            """)
+
+            # Copy existing data with strategy_type='eod'
+            cursor.execute("""
+                INSERT INTO hypothetical_trades_new
+                (id, ticker, date, signal_id, entry_time, entry_price,
+                 exit_time, exit_price, pnl_percent, status, strategy_type, created_at)
+                SELECT id, ticker, date, signal_id, entry_time, entry_price,
+                       exit_time, exit_price, pnl_percent, status, 'eod', created_at
+                FROM hypothetical_trades
+            """)
+
+            # Drop old table and rename new one
+            cursor.execute("DROP TABLE hypothetical_trades")
+            cursor.execute("ALTER TABLE hypothetical_trades_new RENAME TO hypothetical_trades")
+
+            logger.info("Migration completed successfully")
+    else:
+        # Create new table with strategy support from scratch
+        cursor.execute("""
+            CREATE TABLE hypothetical_trades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                date DATE NOT NULL,
+                signal_id INTEGER,
+                entry_time TIMESTAMP NOT NULL,
+                entry_price REAL NOT NULL,
+                exit_time TIMESTAMP,
+                exit_price REAL,
+                pnl_percent REAL,
+                status TEXT DEFAULT 'open',
+                strategy_type TEXT DEFAULT 'eod',
+                profit_target_pct REAL,
+                exit_reason TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (signal_id) REFERENCES signals(id),
+                UNIQUE(ticker, date, strategy_type)
+            )
+        """)
+
+    # Earnings intraday analysis table (for historical analysis)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS earnings_intraday_analysis (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ticker TEXT NOT NULL,
-            date DATE NOT NULL,
-            signal_id INTEGER,
-            entry_time TIMESTAMP NOT NULL,
-            entry_price REAL NOT NULL,
-            exit_time TIMESTAMP,
-            exit_price REAL,
-            pnl_percent REAL,
-            status TEXT DEFAULT 'open',
+            earnings_date DATE NOT NULL,
+            time_of_day TEXT NOT NULL,
+            timestamp TIMESTAMP NOT NULL,
+            price REAL NOT NULL,
+            normalized_price REAL NOT NULL,
+            base_price REAL NOT NULL,
+            filter_score REAL DEFAULT 0.0,
+            passed_filter INTEGER DEFAULT 0,
+            created_signal INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (signal_id) REFERENCES signals(id),
-            UNIQUE(ticker, date)
+            UNIQUE(ticker, earnings_date, time_of_day)
         )
     """)
 
@@ -155,6 +231,10 @@ def init_database():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_intraday_timestamp ON intraday_data(timestamp)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_hypothetical_date ON hypothetical_trades(date)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_hypothetical_ticker_date ON hypothetical_trades(ticker, date)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_hypothetical_strategy ON hypothetical_trades(strategy_type)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_earnings_analysis_date ON earnings_intraday_analysis(earnings_date)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_earnings_analysis_ticker_date ON earnings_intraday_analysis(ticker, earnings_date)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_earnings_analysis_filter ON earnings_intraday_analysis(passed_filter, created_signal)")
 
     conn.commit()
     conn.close()
@@ -604,219 +684,285 @@ def clear_old_intraday_data(keep_days: int = 1) -> int:
 
 # Hypothetical trading functions
 
-def create_hypothetical_trade(ticker: str, signal_id: int, entry_time: datetime, 
-                               entry_price: float, trade_date: date) -> Optional[int]:
+def create_hypothetical_trade(ticker: str, signal_id: int, entry_time: datetime,
+                               entry_price: float, trade_date: date,
+                               strategy_type: str = 'eod',
+                               profit_target_pct: Optional[float] = None) -> Optional[int]:
     """
     Create a hypothetical trade entry (paper trading).
-    Only creates if no trade exists for this ticker on this date.
-    
+    Only creates if no trade exists for this ticker + strategy on this date.
+
     Args:
         ticker: Stock ticker
         signal_id: ID of the signal that triggered this trade
         entry_time: Entry timestamp
         entry_price: Entry price
         trade_date: Date of the trade
-    
+        strategy_type: Strategy type ('eod' or '1pct_target')
+        profit_target_pct: Profit target percentage (for target-based strategies)
+
     Returns:
         Trade ID if created, None if already exists
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
-    # Check if trade already exists for this ticker today
+
+    # Check if trade already exists for this ticker + strategy today
     cursor.execute("""
         SELECT id FROM hypothetical_trades
-        WHERE ticker = ? AND date = ?
-    """, (ticker, trade_date.strftime('%Y-%m-%d')))
-    
+        WHERE ticker = ? AND date = ? AND strategy_type = ?
+    """, (ticker, trade_date.strftime('%Y-%m-%d'), strategy_type))
+
     existing = cursor.fetchone()
     if existing:
         conn.close()
-        logger.debug(f"Hypothetical trade already exists for {ticker} on {trade_date}")
+        logger.debug(f"Hypothetical trade already exists for {ticker} ({strategy_type}) on {trade_date}")
         return None
-    
+
     # Create new hypothetical trade
     cursor.execute("""
         INSERT INTO hypothetical_trades
-        (ticker, date, signal_id, entry_time, entry_price, status)
-        VALUES (?, ?, ?, ?, ?, 'open')
+        (ticker, date, signal_id, entry_time, entry_price, status,
+         strategy_type, profit_target_pct)
+        VALUES (?, ?, ?, ?, ?, 'open', ?, ?)
     """, (
         ticker,
         trade_date.strftime('%Y-%m-%d'),
         signal_id,
         entry_time.strftime('%Y-%m-%d %H:%M:%S'),
-        entry_price
+        entry_price,
+        strategy_type,
+        profit_target_pct
     ))
-    
+
     trade_id = cursor.lastrowid
     conn.commit()
     conn.close()
-    
-    logger.info(f"Created hypothetical trade for {ticker} at {entry_price} SEK")
+
+    logger.info(f"Created hypothetical trade for {ticker} ({strategy_type}) at {entry_price} SEK")
     return trade_id
 
 
-def has_hypothetical_trade_today(ticker: str, trade_date: date) -> bool:
+def has_hypothetical_trade_today(ticker: str, trade_date: date,
+                                  strategy_type: Optional[str] = None) -> bool:
     """
     Check if a hypothetical trade already exists for ticker on given date.
-    
+
     Args:
         ticker: Stock ticker
         trade_date: Date to check
-    
+        strategy_type: Optional strategy type filter
+
     Returns:
         True if trade exists, False otherwise
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT id FROM hypothetical_trades
-        WHERE ticker = ? AND date = ?
-    """, (ticker, trade_date.strftime('%Y-%m-%d')))
-    
+
+    if strategy_type:
+        cursor.execute("""
+            SELECT id FROM hypothetical_trades
+            WHERE ticker = ? AND date = ? AND strategy_type = ?
+        """, (ticker, trade_date.strftime('%Y-%m-%d'), strategy_type))
+    else:
+        cursor.execute("""
+            SELECT id FROM hypothetical_trades
+            WHERE ticker = ? AND date = ?
+        """, (ticker, trade_date.strftime('%Y-%m-%d')))
+
     exists = cursor.fetchone() is not None
     conn.close()
-    
+
     return exists
 
 
-def close_hypothetical_trade(trade_id: int, exit_time: datetime, exit_price: float) -> bool:
+def close_hypothetical_trade(trade_id: int, exit_time: datetime, exit_price: float,
+                              exit_reason: str = 'eod') -> bool:
     """
     Close a hypothetical trade with exit price and calculate P&L.
-    
+
     Args:
         trade_id: ID of the trade to close
         exit_time: Exit timestamp
         exit_price: Exit price
-    
+        exit_reason: Reason for exit ('eod', 'profit_target', 'eod_fallback')
+
     Returns:
         True if successful, False otherwise
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     # Get entry price
     cursor.execute("""
         SELECT entry_price FROM hypothetical_trades
         WHERE id = ? AND status = 'open'
     """, (trade_id,))
-    
+
     row = cursor.fetchone()
     if not row:
         conn.close()
         logger.warning(f"Hypothetical trade {trade_id} not found or already closed")
         return False
-    
+
     entry_price = row[0]
     pnl_percent = ((exit_price - entry_price) / entry_price) * 100
-    
+
     # Update trade
     cursor.execute("""
         UPDATE hypothetical_trades
         SET exit_time = ?,
             exit_price = ?,
             pnl_percent = ?,
-            status = 'closed'
+            status = 'closed',
+            exit_reason = ?
         WHERE id = ?
     """, (
         exit_time.strftime('%Y-%m-%d %H:%M:%S'),
         exit_price,
         pnl_percent,
+        exit_reason,
         trade_id
     ))
-    
+
     conn.commit()
     conn.close()
-    
-    logger.info(f"Closed hypothetical trade {trade_id}: {pnl_percent:+.2f}%")
+
+    logger.info(f"Closed hypothetical trade {trade_id} ({exit_reason}): {pnl_percent:+.2f}%")
     return True
 
 
-def get_open_hypothetical_trades(trade_date: Optional[date] = None) -> List[Dict[str, Any]]:
+def get_open_hypothetical_trades(trade_date: Optional[date] = None,
+                                  strategy_type: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Get all open hypothetical trades, optionally filtered by date.
-    
+    Get all open hypothetical trades, optionally filtered by date and strategy.
+
     Args:
         trade_date: Optional date filter (default: today)
-    
+        strategy_type: Optional strategy type filter
+
     Returns:
         List of open trade dictionaries
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
-    if trade_date:
+
+    if trade_date and strategy_type:
+        cursor.execute("""
+            SELECT * FROM hypothetical_trades
+            WHERE status = 'open' AND date = ? AND strategy_type = ?
+            ORDER BY entry_time ASC
+        """, (trade_date.strftime('%Y-%m-%d'), strategy_type))
+    elif trade_date:
         cursor.execute("""
             SELECT * FROM hypothetical_trades
             WHERE status = 'open' AND date = ?
             ORDER BY entry_time ASC
         """, (trade_date.strftime('%Y-%m-%d'),))
+    elif strategy_type:
+        cursor.execute("""
+            SELECT * FROM hypothetical_trades
+            WHERE status = 'open' AND strategy_type = ?
+            ORDER BY entry_time ASC
+        """, (strategy_type,))
     else:
         cursor.execute("""
             SELECT * FROM hypothetical_trades
             WHERE status = 'open'
             ORDER BY entry_time ASC
         """)
-    
+
     rows = cursor.fetchall()
     conn.close()
-    
+
     return [dict(row) for row in rows]
 
 
-def get_hypothetical_trades(trade_date: Optional[date] = None, 
-                             limit: int = 100) -> List[Dict[str, Any]]:
+def get_hypothetical_trades(trade_date: Optional[date] = None,
+                             limit: int = 100,
+                             strategy_type: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Get hypothetical trades, optionally filtered by date.
-    
+    Get hypothetical trades, optionally filtered by date and strategy.
+
     Args:
         trade_date: Optional date filter
         limit: Maximum number of trades to return
-    
+        strategy_type: Optional strategy type filter
+
     Returns:
         List of trade dictionaries
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
-    if trade_date:
+
+    if trade_date and strategy_type:
+        cursor.execute("""
+            SELECT * FROM hypothetical_trades
+            WHERE date = ? AND strategy_type = ?
+            ORDER BY entry_time DESC
+            LIMIT ?
+        """, (trade_date.strftime('%Y-%m-%d'), strategy_type, limit))
+    elif trade_date:
         cursor.execute("""
             SELECT * FROM hypothetical_trades
             WHERE date = ?
             ORDER BY entry_time DESC
             LIMIT ?
         """, (trade_date.strftime('%Y-%m-%d'), limit))
+    elif strategy_type:
+        cursor.execute("""
+            SELECT * FROM hypothetical_trades
+            WHERE strategy_type = ?
+            ORDER BY entry_time DESC
+            LIMIT ?
+        """, (strategy_type, limit))
     else:
         cursor.execute("""
             SELECT * FROM hypothetical_trades
             ORDER BY entry_time DESC
             LIMIT ?
         """, (limit,))
-    
+
     rows = cursor.fetchall()
     conn.close()
-    
+
     return [dict(row) for row in rows]
 
 
-def get_hypothetical_stats(trade_date: Optional[date] = None) -> Dict[str, Any]:
+def get_hypothetical_stats(trade_date: Optional[date] = None,
+                            strategy_type: Optional[str] = None) -> Dict[str, Any]:
     """
     Calculate statistics for hypothetical trades.
-    
+
     Args:
         trade_date: Optional date filter (default: all trades)
-    
+        strategy_type: Optional strategy type filter
+
     Returns:
         Dictionary with statistics
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
-    if trade_date:
-        # Stats for specific date
+
+    if trade_date and strategy_type:
+        # Stats for specific date and strategy
         cursor.execute("""
-            SELECT 
+            SELECT
+                COUNT(*) as total_trades,
+                COUNT(CASE WHEN status = 'closed' THEN 1 END) as closed_trades,
+                COUNT(CASE WHEN status = 'open' THEN 1 END) as open_trades,
+                COUNT(CASE WHEN pnl_percent > 0 THEN 1 END) as profitable_trades,
+                COUNT(CASE WHEN pnl_percent < 0 THEN 1 END) as losing_trades,
+                AVG(CASE WHEN status = 'closed' THEN pnl_percent END) as avg_return,
+                MAX(pnl_percent) as max_return,
+                MIN(pnl_percent) as min_return
+            FROM hypothetical_trades
+            WHERE date = ? AND strategy_type = ?
+        """, (trade_date.strftime('%Y-%m-%d'), strategy_type))
+    elif trade_date:
+        # Stats for specific date (all strategies)
+        cursor.execute("""
+            SELECT
                 COUNT(*) as total_trades,
                 COUNT(CASE WHEN status = 'closed' THEN 1 END) as closed_trades,
                 COUNT(CASE WHEN status = 'open' THEN 1 END) as open_trades,
@@ -828,10 +974,25 @@ def get_hypothetical_stats(trade_date: Optional[date] = None) -> Dict[str, Any]:
             FROM hypothetical_trades
             WHERE date = ?
         """, (trade_date.strftime('%Y-%m-%d'),))
-    else:
-        # Overall stats
+    elif strategy_type:
+        # Overall stats for specific strategy
         cursor.execute("""
-            SELECT 
+            SELECT
+                COUNT(*) as total_trades,
+                COUNT(CASE WHEN status = 'closed' THEN 1 END) as closed_trades,
+                COUNT(CASE WHEN status = 'open' THEN 1 END) as open_trades,
+                COUNT(CASE WHEN pnl_percent > 0 THEN 1 END) as profitable_trades,
+                COUNT(CASE WHEN pnl_percent < 0 THEN 1 END) as losing_trades,
+                AVG(CASE WHEN status = 'closed' THEN pnl_percent END) as avg_return,
+                MAX(pnl_percent) as max_return,
+                MIN(pnl_percent) as min_return
+            FROM hypothetical_trades
+            WHERE strategy_type = ?
+        """, (strategy_type,))
+    else:
+        # Overall stats (all strategies)
+        cursor.execute("""
+            SELECT
                 COUNT(*) as total_trades,
                 COUNT(CASE WHEN status = 'closed' THEN 1 END) as closed_trades,
                 COUNT(CASE WHEN status = 'open' THEN 1 END) as open_trades,
@@ -873,3 +1034,300 @@ def get_hypothetical_stats(trade_date: Optional[date] = None) -> Dict[str, Any]:
         stats['win_rate'] = 0.0
 
     return stats
+
+
+def extract_earnings_intraday_for_date(target_date: date) -> Dict[str, int]:
+    """
+    Extract intraday data for all earnings on the given date.
+
+    This function:
+    1. Finds all tickers with earnings on target_date from the earnings calendar
+    2. Extracts their intraday price data
+    3. Determines which passed filter and which created signals
+    4. Saves all data to earnings_intraday_analysis table
+
+    Args:
+        target_date: Date to extract earnings data for
+
+    Returns:
+        Dictionary with extraction statistics:
+        {
+            'total_earnings': int,
+            'extracted': int,
+            'passed_filter': int,
+            'created_signal': int,
+            'data_points': int
+        }
+    """
+    import pandas as pd
+    import yfinance as yf
+    from datetime import timedelta
+
+    logger.info(f"Extracting earnings intraday data for {target_date}")
+
+    # Load earnings calendar to find earnings for this date
+    csv_path = 'data/earnings_calendar.csv'
+
+    try:
+        df = pd.read_csv(csv_path, encoding='utf-8')
+    except UnicodeDecodeError:
+        try:
+            df = pd.read_csv(csv_path, encoding='latin-1')
+        except:
+            df = pd.read_csv(csv_path, encoding='cp1252')
+
+    # Parse dates and filter for target date
+    def parse_date(date_str):
+        try:
+            from datetime import datetime
+            return datetime.strptime(date_str, '%m/%d/%y').date()
+        except:
+            try:
+                from datetime import datetime
+                return datetime.strptime(date_str, '%Y-%m-%d').date()
+            except:
+                return None
+
+    earnings_today = []
+    for _, row in df.iterrows():
+        if pd.isna(row['date']) or pd.isna(row['ticker']):
+            continue
+
+        date_obj = parse_date(str(row['date']))
+        if date_obj == target_date:
+            earnings_today.append(row['ticker'])
+
+    logger.info(f"Found {len(earnings_today)} earnings for {target_date}")
+
+    if len(earnings_today) == 0:
+        return {
+            'total_earnings': 0,
+            'extracted': 0,
+            'passed_filter': 0,
+            'created_signal': 0,
+            'data_points': 0
+        }
+
+    # Get filter-passed and signal-created sets
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    target_date_str = target_date.strftime('%Y-%m-%d')
+
+    cursor.execute("SELECT DISTINCT ticker FROM watchlist WHERE date = ?", (target_date_str,))
+    watchlist_set = set(row[0] for row in cursor.fetchall())
+
+    cursor.execute("SELECT DISTINCT ticker FROM signals WHERE DATE(signal_time) = ?", (target_date_str,))
+    signals_set = set(row[0] for row in cursor.fetchall())
+
+    cursor.execute("SELECT DISTINCT ticker FROM hypothetical_trades WHERE date = ?", (target_date_str,))
+    trades_set = set(row[0] for row in cursor.fetchall())
+
+    filter_passed_set = watchlist_set | signals_set | trades_set
+
+    # Extract intraday data for each ticker
+    extracted_count = 0
+    data_points_count = 0
+
+    start_date = target_date.strftime('%Y-%m-%d')
+    end_date = (target_date + timedelta(days=1)).strftime('%Y-%m-%d')
+
+    for ticker in earnings_today:
+        try:
+            # Fetch intraday data
+            stock = yf.Ticker(ticker)
+            intraday_df = stock.history(start=start_date, end=end_date, interval='1m')
+
+            if intraday_df is None or len(intraday_df) == 0:
+                continue
+
+            # Filter for market hours
+            try:
+                intraday_df = intraday_df.between_time('09:00', '17:30')
+            except:
+                pass
+
+            if len(intraday_df) == 0:
+                continue
+
+            # Find base price (prefer 09:00, accept first available)
+            base_price = None
+            for timestamp, row in intraday_df.iterrows():
+                time_str = timestamp.strftime('%H:%M')
+                if time_str.startswith('09:00') or time_str.startswith('09:01'):
+                    base_price = row['Close']
+                    break
+
+            if base_price is None:
+                first_row = intraday_df.iloc[0]
+                base_price = first_row['Close']
+
+            if base_price is None or base_price == 0:
+                continue
+
+            # Check filter status
+            passed_filter = ticker in filter_passed_set
+            created_signal = ticker in trades_set
+
+            # Save intraday points
+            for timestamp, row in intraday_df.iterrows():
+                time_str = timestamp.strftime('%H:%M')
+                price = row['Close']
+
+                if price > 0:
+                    normalized_price = (price / base_price) * 100
+                    timestamp_str = f"{target_date_str} {time_str}:00"
+
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO earnings_intraday_analysis
+                        (ticker, earnings_date, time_of_day, timestamp, price,
+                         normalized_price, base_price, filter_score, passed_filter, created_signal)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        ticker, target_date_str, time_str, timestamp_str, float(price),
+                        float(normalized_price), float(base_price),
+                        100.0 if passed_filter else 0.0, passed_filter, created_signal
+                    ))
+                    data_points_count += 1
+
+            extracted_count += 1
+
+        except Exception as e:
+            logger.error(f"Error extracting {ticker} for {target_date}: {e}")
+
+    conn.commit()
+    conn.close()
+
+    result = {
+        'total_earnings': len(earnings_today),
+        'extracted': extracted_count,
+        'passed_filter': len(filter_passed_set & set(earnings_today)),
+        'created_signal': len(trades_set & set(earnings_today)),
+        'data_points': data_points_count
+    }
+
+    logger.info(f"Extracted {extracted_count}/{len(earnings_today)} earnings, "
+                f"saved {data_points_count} data points")
+
+    return result
+
+
+def calculate_top_performers(target_date: date, percentile: float = 0.30) -> Dict[str, Any]:
+    """
+    Calculate and mark the top and bottom performing stocks for a given earnings date.
+
+    Performance is measured as percentage gain from base price (9:00) to final price (last available).
+    Top performers are marked in the top_20pct_performer field.
+    Bottom performers are marked in the bottom_30pct_performer field.
+
+    Args:
+        target_date: Date to calculate performers for
+        percentile: Percentile to mark as top/bottom performers (default 0.30 = 30%)
+
+    Returns:
+        Dictionary with statistics:
+        {
+            'total_stocks': int,
+            'top_performer_count': int,
+            'bottom_performer_count': int,
+            'top_min_gain_threshold': float,
+            'bottom_max_gain_threshold': float
+        }
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    target_date_str = target_date.strftime('%Y-%m-%d')
+
+    # Get all unique tickers for this date with their base price and actual closing price
+    # Use the price at the latest time_of_day (actual close), not MAX price (best moment)
+    cursor.execute("""
+        SELECT
+            e1.ticker,
+            e1.base_price,
+            e1.normalized_price as final_price
+        FROM earnings_intraday_analysis e1
+        INNER JOIN (
+            SELECT ticker, MAX(time_of_day) as max_time
+            FROM earnings_intraday_analysis
+            WHERE earnings_date = ?
+            GROUP BY ticker
+        ) e2 ON e1.ticker = e2.ticker AND e1.time_of_day = e2.max_time
+        WHERE e1.earnings_date = ?
+          AND e1.base_price > 0
+          AND e1.normalized_price > 0
+    """, (target_date_str, target_date_str))
+
+    stocks = cursor.fetchall()
+
+    if not stocks:
+        conn.close()
+        logger.warning(f"No stocks found for {target_date} to calculate performers")
+        return {
+            'total_stocks': 0,
+            'top_performer_count': 0,
+            'bottom_performer_count': 0,
+            'top_min_gain_threshold': 0.0,
+            'bottom_max_gain_threshold': 0.0
+        }
+
+    # Calculate gain for each stock
+    stock_gains = []
+    for ticker, base_price, final_price in stocks:
+        # Gain as percentage points from 100% baseline
+        # (final_price is normalized_price which is relative to 9:00 = 100%)
+        gain = final_price - 100.0
+        stock_gains.append((ticker, gain))
+
+    # Sort by gain (descending)
+    stock_gains.sort(key=lambda x: x[1], reverse=True)
+
+    # Calculate how many stocks are in each percentile
+    count = max(1, int(len(stock_gains) * percentile))
+
+    # Get the top and bottom performers
+    top_performers = [ticker for ticker, gain in stock_gains[:count]]
+    bottom_performers = [ticker for ticker, gain in stock_gains[-count:]]
+
+    top_min_gain = stock_gains[count - 1][1] if count > 0 else 0.0
+    bottom_max_gain = stock_gains[-count][1] if count > 0 else 0.0
+
+    # Reset all stocks for this date
+    cursor.execute("""
+        UPDATE earnings_intraday_analysis
+        SET top_20pct_performer = 0, bottom_30pct_performer = 0
+        WHERE earnings_date = ?
+    """, (target_date_str,))
+
+    # Mark top performers
+    for ticker in top_performers:
+        cursor.execute("""
+            UPDATE earnings_intraday_analysis
+            SET top_20pct_performer = 1
+            WHERE earnings_date = ? AND ticker = ?
+        """, (target_date_str, ticker))
+
+    # Mark bottom performers
+    for ticker in bottom_performers:
+        cursor.execute("""
+            UPDATE earnings_intraday_analysis
+            SET bottom_30pct_performer = 1
+            WHERE earnings_date = ? AND ticker = ?
+        """, (target_date_str, ticker))
+
+    conn.commit()
+    conn.close()
+
+    result = {
+        'total_stocks': len(stock_gains),
+        'top_performer_count': count,
+        'bottom_performer_count': count,
+        'top_min_gain_threshold': round(top_min_gain, 2),
+        'bottom_max_gain_threshold': round(bottom_max_gain, 2)
+    }
+
+    logger.info(f"Marked top/bottom {percentile*100}% performers for {target_date}: "
+                f"top={count}/{len(stock_gains)} (min: {top_min_gain:+.2f}%), "
+                f"bottom={count}/{len(stock_gains)} (max: {bottom_max_gain:+.2f}%)")
+
+    return result

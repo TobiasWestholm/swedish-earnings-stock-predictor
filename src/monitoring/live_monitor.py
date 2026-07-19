@@ -9,7 +9,10 @@ import pytz
 from src.data.yfinance_provider import YFinanceProvider
 from src.monitoring.indicators import calculate_intraday_metrics
 from src.monitoring.signal_detector import SignalDetector
-from src.utils.database import get_watchlist, save_intraday_data, save_signal
+from src.utils.database import (
+    get_watchlist, save_intraday_data, save_signal,
+    get_open_hypothetical_trades, close_hypothetical_trade
+)
 from src.utils.config import load_config
 
 logger = logging.getLogger(__name__)
@@ -204,6 +207,65 @@ class LiveMonitor:
         logger.info(f"Polling complete: {len(results)}/{len(self.watchlist_tickers)} successful")
         return results
 
+    def check_profit_targets(self, poll_results: List[Dict[str, Any]]):
+        """
+        Check if profit target trades have reached their profit targets and close them.
+
+        Args:
+            poll_results: List of ticker data from poll_watchlist()
+        """
+        # Load profit targets from config
+        config = load_config()
+        strategies_config = config.get('strategies', {})
+        profit_targets_config = strategies_config.get('profit_targets', {})
+        profit_targets = profit_targets_config.get('targets', [1.0, 2.0, 3.0, 4.0, 5.0])
+
+        trade_date = date.today()
+
+        # Create a lookup dict for current prices
+        current_prices = {data['ticker']: data.get('close') for data in poll_results if data.get('close')}
+
+        # Check each profit target strategy
+        for target_pct in profit_targets:
+            # Determine strategy type name
+            strategy_type = f"{int(target_pct)}pct_target"
+
+            # Get open trades for this strategy
+            open_trades = get_open_hypothetical_trades(trade_date=trade_date, strategy_type=strategy_type)
+
+            if not open_trades:
+                continue
+
+            # Check each open trade
+            for trade in open_trades:
+                ticker = trade['ticker']
+                entry_price = trade['entry_price']
+                trade_id = trade['id']
+                stored_target = trade.get('profit_target_pct', target_pct)
+
+                # Get current price from poll results
+                current_price = current_prices.get(ticker)
+
+                if current_price is None:
+                    logger.warning(f"{ticker}: No current price available for profit check")
+                    continue
+
+                # Calculate P&L percentage
+                pnl_pct = ((current_price - entry_price) / entry_price) * 100
+
+                # Check if profit target reached
+                if pnl_pct >= stored_target:
+                    exit_time = datetime.now(self.timezone)
+                    success = close_hypothetical_trade(
+                        trade_id=trade_id,
+                        exit_time=exit_time,
+                        exit_price=current_price,
+                        exit_reason='profit_target'
+                    )
+
+                    if success:
+                        logger.info(f"✓ {ticker} ({strategy_type}): Profit target reached! Closed at {pnl_pct:+.2f}% (target: {stored_target}%)")
+
     def check_signals(self, poll_results: List[Dict[str, Any]]):
         """
         Check poll results for entry signals and save them to database.
@@ -246,35 +308,68 @@ class LiveMonitor:
                 # Import hypothetical trade functions
                 from src.utils.database import (
                     create_hypothetical_trade,
-                    has_hypothetical_trade_today
+                    has_hypothetical_trade_today,
+                    get_connection
                 )
 
                 # Save signal
                 signal_id = save_signal(signal)
                 logger.info(f"✓ Signal saved to database (ID: {signal_id})")
 
-                # Create hypothetical trade (only first signal per ticker per day)
+                # Create multiple hypothetical trades from the same signal (one per strategy)
                 ticker = signal['ticker']
                 trade_date = date.today()
 
-                if not has_hypothetical_trade_today(ticker, trade_date):
-                    # Parse signal time to datetime
-                    signal_time = signal['signal_time']
-                    if isinstance(signal_time, str):
-                        signal_time = datetime.fromisoformat(signal_time)
+                # Parse signal time to datetime
+                signal_time = signal['signal_time']
+                if isinstance(signal_time, str):
+                    signal_time = datetime.fromisoformat(signal_time)
 
-                    trade_id = create_hypothetical_trade(
-                        ticker=ticker,
-                        signal_id=signal_id,
-                        entry_time=signal_time,
-                        entry_price=signal['entry_price'],
-                        trade_date=trade_date
-                    )
+                # Load profit targets from config
+                config = load_config()
+                strategies_config = config.get('strategies', {})
+                profit_targets_config = strategies_config.get('profit_targets', {})
+                profit_targets = profit_targets_config.get('targets', [1.0, 2.0, 3.0, 4.0, 5.0])
 
-                    if trade_id:
-                        logger.info(f"✓ Hypothetical trade created for {ticker} (ID: {trade_id})")
-                else:
-                    logger.debug(f"Hypothetical trade already exists for {ticker} today")
+                # Create trades in a transaction for atomicity
+                conn = get_connection()
+                try:
+                    # Trade 1: EOD strategy
+                    if not has_hypothetical_trade_today(ticker, trade_date, strategy_type='eod'):
+                        eod_trade_id = create_hypothetical_trade(
+                            ticker=ticker,
+                            signal_id=signal_id,
+                            entry_time=signal_time,
+                            entry_price=signal['entry_price'],
+                            trade_date=trade_date,
+                            strategy_type='eod'
+                        )
+                        if eod_trade_id:
+                            logger.info(f"✓ EOD trade created for {ticker} (ID: {eod_trade_id})")
+
+                    # Trades 2-N: Profit target strategies
+                    for target_pct in profit_targets:
+                        strategy_type = f"{int(target_pct)}pct_target"
+
+                        if not has_hypothetical_trade_today(ticker, trade_date, strategy_type=strategy_type):
+                            target_trade_id = create_hypothetical_trade(
+                                ticker=ticker,
+                                signal_id=signal_id,
+                                entry_time=signal_time,
+                                entry_price=signal['entry_price'],
+                                trade_date=trade_date,
+                                strategy_type=strategy_type,
+                                profit_target_pct=target_pct
+                            )
+                            if target_trade_id:
+                                logger.info(f"✓ {int(target_pct)}% Target trade created for {ticker} (ID: {target_trade_id})")
+
+                    conn.commit()
+                except Exception as e:
+                    conn.rollback()
+                    raise e
+                finally:
+                    conn.close()
 
             except Exception as e:
                 logger.error(f"Error saving signal for {signal['ticker']}: {e}")
@@ -336,6 +431,9 @@ class LiveMonitor:
 
                     # Check for entry signals (Phase 4)
                     self.check_signals(results)
+
+                    # Check profit targets for 1pct_target strategy
+                    self.check_profit_targets(results)
 
                 # Wait for next poll
                 logger.info(f"Waiting {self.poll_interval} seconds until next poll...")

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 # Setup logging
 setup_logger()
 
-# Expected backtest metrics (from STRATEGY_CONFIGURATION.md)
+# Expected backtest metrics (from AGENTS.md)
 BACKTEST_METRICS = {
     'win_rate': 54.5,
     'avg_pnl': 4.54,

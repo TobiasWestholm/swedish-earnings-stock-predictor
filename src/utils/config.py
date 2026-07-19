@@ -1,4 +1,4 @@
-"""Configuration management for Svea Surveillance."""
+"""Configuration management for Earnings Predictor."""
 
 import yaml
 import os

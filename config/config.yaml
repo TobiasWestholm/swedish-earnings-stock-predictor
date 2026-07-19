@@ -17,6 +17,21 @@ monitoring:
   lookback_minutes_falling_knife: 5  # Check if price is above 5-min average (avoid falling knife)
   max_price_extension: 0.05  # 5% above open (avoid extended entries)
 
+strategies:
+  eod:
+    enabled: true
+    exit_time: "17:00"  # Close all positions at end of trading day
+
+  profit_targets:
+    enabled: true
+    fallback_exit_time: "17:00"  # Close at EOD if target not reached
+    targets:  # List of profit target percentages to track
+      - 1.0   # 1% profit target
+      - 2.0   # 2% profit target
+      - 3.0   # 3% profit target
+      - 4.0   # 4% profit target
+      - 5.0   # 5% profit target
+
 risk:
   account_value: 100000  # SEK
   risk_per_trade: 0.01  # 1% of portfolio
@@ -35,9 +50,26 @@ data:
   data_staleness_warning: 120  # seconds
   earnings_calendar_path: "data/earnings_calendar.csv"
 
+fundamental_data:
+  # Automatically fetch fundamental metrics at EOD (17:30)
+  fetch_at_eod: true
+
+  # Pre-fetch for next trading day (optional, disabled by default)
+  prefetch_next_day: false
+
+  # Timeout per fetch script (seconds)
+  timeout_per_script: 600
+
+  # Total timeout for all scripts (seconds)
+  total_timeout: 900
+
+  # Retry failed fetches (not yet implemented)
+  retry_on_failure: true
+  max_retries: 2
+
 database:
   path: "data/trades.db"
 
 logging:
   level: "INFO"
-  file: "logs/svea_surveillance.log"
+  file: "logs/earnings_predictor.log"
